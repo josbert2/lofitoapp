@@ -1,0 +1,14 @@
+.wrapper {
+    position: absolute;
+    inset: 0;
+}
+.background-video {
+    position: absolute;
+    transition: all 0.5s ease-in-out;
+    video{
+        object-fit: cover;
+    }
+
+    
+}
+

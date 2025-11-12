@@ -1,0 +1,55 @@
+.bottom-bar {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 54px;
+    width: 100vw;
+    margin: 32px 0;
+    bottom: 8px;
+    z-index: 1000000;
+    transition: all 0.3s ease-in-out;
+    .artist-info {
+        position: absolute;
+        left: 80px;
+        display: flex;
+        align-items: center;
+        transition: all 0.5s ease;
+
+        .title {
+            height: 70px;
+            margin: 0 16px;
+
+            &:hover {
+                cursor: pointer;
+                transition: all 0.2s ease-in-out;
+                transform: scale(1.03);
+            }
+        }
+    }
+
+    .icon {
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        &:hover {
+            opacity: 0.3;
+        }
+    }
+    .player-bar {
+        display: flex;
+        align-items: center;
+    }
+}
+
+// next icon, prev icon
+.button-np {
+    height: 36px;
+    width: 36px;
+}
+// play, pause icon
+.button-pp {
+    height: 54px;
+    width: 54px;
+    margin-left: 16px;
+    margin-right: 16px;
+}

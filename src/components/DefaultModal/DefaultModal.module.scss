@@ -1,0 +1,13 @@
+.dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 9999999;
+    overflow-y: auto;
+}
+
+.Modal {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+}

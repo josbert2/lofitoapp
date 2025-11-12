@@ -1,0 +1,173 @@
+@import 'normalize.css';
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
+:root {
+    --color-primary: #f3a952 !important;
+    --text-color: #212020 !important;
+    --text-white: #fcfaf8 !important;
+    --color-default: #fff;
+    --color-bgd-200: #2828284d;
+    --font-family: Roboto, serif;
+    --color-clear: #0000;
+    --gradient-half: linear-gradient(360deg, #363636, #363636 40%, rgba(54, 54, 54, 0));
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+}
+html {
+    font-size: 62.5%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: 1.4rem;
+    line-height: 2.2rem;
+    color: var(--color-default);
+    background-color: #14141d;
+    text-rendering: optimizeSpeed;
+    overflow-y: overlay;
+    user-select: none;
+}
+
+video {
+    display: block;
+}
+
+a {
+    text-decoration: none;
+}
+
+@media only screen and (max-width: 923px) {
+    .hideMobile {
+        display: none !important;
+    }
+}
+// css for slick-react
+.slick-active div {
+    opacity: 1;
+}
+
+// Font henju
+@font-face {
+    font-family: Henju, sans-serif;
+    src: url('/assets/fonts/Henju-Regular.ttf');
+    font-weight: 400;
+}
+@font-face {
+    font-family: Henju, sans-serif;
+    src: url('/assets/fonts/Henju-Bold.ttf');
+    font-weight: 500;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+}
+
+img video {
+    border-style: none;
+    vertical-align: middle;
+}
+
+// custom tooltip
+
+body {
+    .tippy-box {
+        background-color: #00000080;
+        border-radius: 0.8rem;
+        font-size: 1.6rem;
+        font-weight: 500;
+    }
+    .tippy-arrow {
+        display: none;
+    }
+    .tippy-content {
+        margin: 0 16px;
+    }
+    .tippy-box[data-theme~='lateral'] {
+        background-color: #363636;
+        color: #fff;
+        font-size: 1.4rem;
+
+        .tippy-content {
+            margin: 0;
+            padding: 0.8rem;
+        }
+    }
+}
+.general-input {
+    width: 100%;
+    background: var(--color-bgd-200);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-default);
+    caret-color: var(--color-primary);
+    border-radius: 4px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    outline: none;
+    &:focus {
+        border: 1px solid #fff4 !important;
+    }
+}
+
+// animation
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+    98% {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-right {
+    0% {
+        transform: translateX(50px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0px);
+        opacity: 1;
+    }
+}
+@keyframes slide-bottom {
+    0% {
+        transform: translateY(25px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0px);
+        opacity: 1;
+    }
+}
+@keyframes slide-left {
+    0% {
+        transform: translateX(-50px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0px);
+        opacity: 1;
+    }
+}
+.fade-in {
+    animation: fade-in 0.4s linear;
+    animation-fill-mode: both;
+}
+
+.slide-right {
+    animation: slide-right 0.4s linear;
+    animation-fill-mode: both;
+}
+.slide-bottom {
+    animation: slide-bottom 0.4s linear;
+    animation-fill-mode: both;
+}
+.slide-left {
+    animation: slide-left 0.4s linear;
+    animation-fill-mode: both;
+}

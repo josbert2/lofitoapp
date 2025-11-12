@@ -1,0 +1,93 @@
+.wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    z-index: 1000000;
+}
+.inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    height: 100%;
+    width: 100vw;
+    padding: 0 48px;
+    z-index: 1;
+    transition: all 0.3s ease-in-out;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+
+    .signUp-btn {
+        border-radius: 8px;
+        padding: 5px 16px;
+        margin-right: 8px;
+        text-align: center;
+        &:hover {
+            opacity: 0.5;
+        }
+    }
+
+    .toggle-weather {
+        margin: 0 16px;
+        transition: all 0.25s ease-in 0.1s;
+        &:hover {
+            opacity: 0.5;
+        }
+        .switch-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+
+            img {
+                height: 16px;
+            }
+        }
+    }
+    .toggle-pixel {
+        margin: 0 16px;
+        .pixel-icon {
+            transition: all 0.5s ease-out 0.1s;
+            height: 24px;
+            width: 24px;
+            cursor: pointer;
+        }
+    }
+    .toggle-weather + .toggle-pixel {
+        margin-left: 0;
+    }
+}
+
+.actionBtn {
+    display: flex;
+    margin-left: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        opacity: 0.3;
+    }
+
+    img {
+        height: 32px;
+        width: 32px;
+    }
+}
+
+@media only screen and (max-width: 923px) {
+    .inner {
+        padding: 0 24px;
+        justify-content: flex-end;
+    }
+    .header-logo {
+        display: none !important;
+    }
+}
