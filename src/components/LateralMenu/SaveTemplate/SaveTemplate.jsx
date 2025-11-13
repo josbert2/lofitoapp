@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '~/hooks';
 import { useSelector } from '~/hooks/useSelector';
 import { UserSelect } from '~/store/user';
-import { updateUser } from '~/firebase/services';
+import { updateUser } from '~/services/userService';
 import { setDraggableModals, setTemplate } from '~/store/session';
 import Button from '~/components/Button';
 import Notification from '~/components/Notification';

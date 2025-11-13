@@ -9,7 +9,7 @@ import { UserSelect } from '~/store/user';
 import { useSelector } from '~/hooks/useSelector';
 import { SessionSelect } from '~/store/session';
 import generateId from '~/utils/id-generator/generateId';
-import { updateUser } from '~/firebase/services';
+import { updateUser } from '~/services/userService';
 import { CircularLoading } from '../Loading';
 import styles from './TemplateDialog.module.scss';
 

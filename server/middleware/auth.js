@@ -56,5 +56,6 @@ const optionalAuth = async (req, res, next) => {
 
 module.exports = {
     authenticateToken,
+    authMiddleware: authenticateToken, // Alias for consistency
     optionalAuth
 };

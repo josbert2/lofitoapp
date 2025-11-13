@@ -2,12 +2,12 @@ const express = require('express');
 const { db } = require('../config/database');
 const { user, userSettings } = require('../db/schema');
 const { eq } = require('drizzle-orm');
-const { authenticateToken } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Todas las rutas requieren autenticación
-router.use(authenticateToken);
+router.use(authMiddleware);
 
 // GET /api/users/me - Obtener datos del usuario actual
 router.get('/me', async (req, res) => {

@@ -10,7 +10,6 @@ import Button, { ButtonClose } from '../../components/Button';
 import { eye1, eye2 } from '~/assets/icons';
 import Notification from '../../components/Notification';
 import styles from './SignUp.module.scss';
-import { addUSer } from '~/firebase/services';
 
 const cx = classNames.bind(styles);
 function SignUp({ onClose, changePage }) {
@@ -41,25 +40,29 @@ function SignUp({ onClose, changePage }) {
 
         try {
             userDispatch(setAuthLoading({ status: true }));
-            const { user } = await createUser(email, password);
-            await changeProfile(username);
-            await addUSer(user.uid, {
-                displayName: user.displayName,
-                email: user.email,
-                photoURL: user.photoURL,
-                uid: user.uid,
-            });
+            // Better Auth createUser already handles user creation in the database
+            // It accepts (email, password, displayName)
+            await createUser(email, password, username);
+            
+            // Update profile if needed
+            if (username) {
+                await changeProfile(username);
+            }
+            
             onClose();
             window.location.reload();
         } catch (error) {
-            if (error.code === 'auth/email-already-in-use') {
+            // Better Auth error handling
+            const errorMessage = error.message || error.toString();
+            
+            if (errorMessage.includes('email') && errorMessage.includes('already')) {
                 setAlert({ ...alert, message: 'Email already in use!', severity: 'error' });
-            } else if (error.code === 'auth/invalid-email') {
+            } else if (errorMessage.includes('email') && errorMessage.includes('invalid')) {
                 setAlert({ ...alert, message: 'Invalid E-mail!', severity: 'error' });
-            } else if (error.code === 'auth/weak-password') {
+            } else if (errorMessage.includes('password') && (errorMessage.includes('short') || errorMessage.includes('weak'))) {
                 setAlert({ ...alert, message: 'Password too short, min 8 characters', severity: 'error' });
             } else {
-                setAlert({ ...alert, message: error.code, severity: 'error' });
+                setAlert({ ...alert, message: errorMessage, severity: 'error' });
             }
             userDispatch(setAuthLoading({ status: false }));
         }
