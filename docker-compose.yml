@@ -1,18 +1,75 @@
 version: "3.8"
+
 services:
-  db:
-    image: postgres:16
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: lofitoapp_mysql
+    restart: always
     environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: appdb
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: lofitoapp
+      MYSQL_USER: lofiuser
+      MYSQL_PASSWORD: lofipass123
     ports:
-      - "7432:5432"
+      - "3307:3306"  # Puerto personalizado 3307 en host -> 3306 en container
     volumes:
-      - db:/var/lib/postgresql/data
-  adminer:
-    image: adminer
+      - mysql_data:/var/lib/mysql
+      - ./server/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - lofitoapp_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # phpMyAdmin para administrar MySQL
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: lofitoapp_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: lofiuser
+      PMA_PASSWORD: lofipass123
     ports:
-      - "7680:8080"
+      - "8081:80"  # Accede en http://localhost:8081
+    depends_on:
+      - mysql
+    networks:
+      - lofitoapp_network
+
+  # Backend API (Node.js/Express)
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: lofitoapp_backend
+    restart: always
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: lofiuser
+      DB_PASSWORD: lofipass123
+      DB_NAME: lofitoapp
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - lofitoapp_network
+
 volumes:
-  db:
+  mysql_data:
+
+networks:
+  lofitoapp_network:
+    driver: bridge
