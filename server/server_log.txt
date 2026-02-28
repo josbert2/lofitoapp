@@ -1,0 +1,5 @@
+
+> lofitoapp-server@1.0.0 dev
+> nodemon index.js
+
+sh: 1: nodemon: not found

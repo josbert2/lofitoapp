@@ -34,7 +34,7 @@ services:
       PMA_USER: lofiuser
       PMA_PASSWORD: lofipass123
     ports:
-      - "8081:80"  # Accede en http://localhost:8081
+      - "8781:80"  # Accede en http://localhost:8081
     depends_on:
       - mysql
     networks:
@@ -62,8 +62,7 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
     networks:
       - lofitoapp_network
 

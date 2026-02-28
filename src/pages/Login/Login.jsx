@@ -39,8 +39,11 @@ function Login({ onClose, changePage }) {
         try {
             userDispatch(setAuthLoading({ status: true }));
             await login(email, password);
+            // Reset loading state after successful login
+            userDispatch(setAuthLoading({ status: false }));
             await onClose();
-            window.location.reload();
+            // Navigate to home without full page reload
+            window.location.replace('/');
         } catch (error) {
             setAlert({ ...alert, message: 'Incorrect email or password', severity: 'error' });
             userDispatch(setAuthLoading({ status: false }));
