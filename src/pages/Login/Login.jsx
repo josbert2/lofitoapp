@@ -42,7 +42,7 @@ function Login({ onClose, changePage }) {
             await onClose();
             window.location.reload();
         } catch (error) {
-            setAlert({ ...alert, message: 'Incorrect email or password', severity: 'error' });
+            setAlert({ ...alert, message: 'Correo o contraseña incorrectos', severity: 'error' });
             userDispatch(setAuthLoading({ status: false }));
             console.log(error.message);
         }
@@ -61,8 +61,8 @@ function Login({ onClose, changePage }) {
             <ButtonClose className={cx('pos')} onClick={onClose} />
             <div className={cx('login-form')}>
                 <img src={logoGif} alt="logo" className={cx('logoGif')} />
-                <h1 className={cx('greeting')}>Welcome back!</h1>
-                <h4>Log In to your account</h4>
+                <h1 className={cx('greeting')}>¡Bienvenido de nuevo!</h1>
+                <h4>Inicia sesión en tu cuenta</h4>
                 <form action="" id="form" onSubmit={handleSubmit}>
                     <div className={cx('form-container')}>
                         <div className={cx('form-group')}>
@@ -70,7 +70,7 @@ function Login({ onClose, changePage }) {
                                 <input
                                     required
                                     id="email"
-                                    placeholder="Email"
+                                    placeholder="Correo electrónico"
                                     className={cx('login-input', 'separator')}
                                     type="text"
                                     onChange={(e) => setEmail(e.target.value)}
@@ -81,7 +81,7 @@ function Login({ onClose, changePage }) {
                                 <input
                                     required
                                     id="password"
-                                    placeholder="password"
+                                    placeholder="Contraseña"
                                     className={cx('login-input')}
                                     type="password"
                                     onChange={(e) => setPassword(e.target.value)}
@@ -90,15 +90,15 @@ function Login({ onClose, changePage }) {
                             </div>
                         </div>
                         <Button disabled={authLoadingStatus} type="rounded" className={cx('login-btn')}>
-                            Login
+                            Iniciar sesión
                         </Button>
                         <p className={cx('accent', 'reset-pwd')} onClick={() => changePage('?auth=reset-password')}>
-                            Forgot password?
+                            ¿Olvidaste tu contraseña?
                         </p>
                         <div className={cx('sign-up-option')}>
-                            <p>Don't have an account?</p>
+                            <p>¿No tienes cuenta?</p>
                             <p className={cx('accent')} onClick={() => changePage('?auth=signup')}>
-                                Sign Up for free
+                                Regístrate gratis
                             </p>
                         </div>
                     </div>

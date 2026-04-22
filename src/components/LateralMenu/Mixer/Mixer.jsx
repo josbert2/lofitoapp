@@ -49,7 +49,7 @@ function Mixer() {
     return (
         <div className={cx('wrapper')}>
             <div className={cx('header')}>
-                <h4 className={cx('title')}>Mood</h4>
+                <h4 className={cx('title')}>Estilo</h4>
                 <img src={logoPng} alt="logo" />
             </div>
             <div className={cx('mixer-panel')}>
@@ -59,14 +59,14 @@ function Mixer() {
                         onClick={() => changePlaylist('sleepy')}
                     >
                         <ReactSVG src={sleepyIcon} alt="sleepy" className={cx('mood-icon')} />
-                        <p>Sleepy</p>
+                        <p>Relajado</p>
                     </div>
                     <div
                         className={cx('mood-item', `${currentPlaylist === 'jazzy' && 'selected'}`)}
                         onClick={() => changePlaylist('jazzy')}
                     >
                         <ReactSVG src={jazzyIcon} alt="jazzy" className={cx('mood-icon')} />
-                        <p>Jazzy</p>
+                        <p>Jazz</p>
                     </div>
                     <div
                         className={cx('mood-item', `${currentPlaylist === 'chill' && 'selected'}`)}
@@ -97,7 +97,7 @@ function Mixer() {
                     />
                     <ReactSVG src={volumeMaxIcon} alt="volume max" />
                 </div>
-                <h4 className={cx('title')}>Sounds</h4>
+                <h4 className={cx('title')}>Sonidos</h4>
                 <div className={cx('effects-container')}>
                     {/* render 3 effects of set */}
                     {currentSet.effects.map((e, index) => {

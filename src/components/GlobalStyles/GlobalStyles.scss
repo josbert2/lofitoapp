@@ -1,5 +1,40 @@
 @import 'normalize.css';
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
+@font-face {
+    font-family: 'Euclid Circular B';
+    src: url('/assets/fonts/euclidcircularb-light.woff2') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Euclid Circular B';
+    src: url('/assets/fonts/euclidcircularb-regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Euclid Circular B';
+    src: url('/assets/fonts/euclidcircularb-regular-italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Euclid Circular B';
+    src: url('/assets/fonts/euclidcircularb-medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Euclid Circular B';
+    src: url('/assets/fonts/euclidcircularb-semibold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
 
 :root {
     --color-primary: #f3a952 !important;
@@ -7,7 +42,7 @@
     --text-white: #fcfaf8 !important;
     --color-default: #fff;
     --color-bgd-200: #2828284d;
-    --font-family: Roboto, serif;
+    --font-family: 'Euclid Circular B', system-ui, -apple-system, sans-serif;
     --color-clear: #0000;
     --gradient-half: linear-gradient(360deg, #363636, #363636 40%, rgba(54, 54, 54, 0));
 }

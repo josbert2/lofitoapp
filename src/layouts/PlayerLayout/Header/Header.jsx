@@ -13,6 +13,7 @@ import { muteUnmuteAll, SessionSelect, setSceneNight, setScenePixel } from '~/st
 import styles from './Header.module.scss';
 import MiniPlayerBar from './MiniPlayerBar';
 import Clock from './Clock';
+import Weather from './Weather';
 
 const cx = classNames.bind(styles);
 
@@ -74,6 +75,7 @@ function Header() {
                 <div className={cx('actions')}>
                     {/* clock show time */}
                     <Clock />
+                    <Weather />
                     {/* button toggle day night */}
                     {hasNightVersion && (
                         <div className={cx('toggle-weather')}>
@@ -132,13 +134,13 @@ function Header() {
                             className="hideMobile"
                         >
                             <p>
-                                Access +20 scenes
-                                <br />& more with premium
+                                Accede a +20 escenas
+                                <br />y más con premium
                             </p>
                         </Button>
                     )}
                     {/* <Button type="transparent" className={cx('signUp-btn', 'hideMobile')}>
-                        Sign up
+                        Registrarme
                     </Button> */}
                     <button className={cx('actionBtn', 'hideMobile')} onClick={() => setModalType('Share')}>
                         <img src={share} alt="share" />

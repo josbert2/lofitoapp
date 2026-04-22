@@ -26,9 +26,9 @@ function Share({ onClose }) {
                 }}
             />
             <div className={cx('inner')}>
-                <h1 className={cx('title')}>Share</h1>
+                <h1 className={cx('title')}>Compartir</h1>
                 <p className={cx('desc')}>
-                    Copy the link to share your combination of music, scenery and sounds with your friends!
+                    ¡Copia el enlace para compartir tu combinación de música, escena y sonidos con tus amigos!
                 </p>
                 <input
                     onClick={copyToClipboard}
@@ -37,9 +37,9 @@ function Share({ onClose }) {
                     value="https://lofi.io.vn/"
                     contentEditable={false}
                 />
-                {isCopied && <p className={cx('text-copied')}>Copied!</p>}
+                {isCopied && <p className={cx('text-copied')}>¡Copiado!</p>}
                 <Button type={'rounded'} leftIcon={twitterIcon}>
-                    Share
+                    Compartir
                 </Button>
             </div>
         </div>

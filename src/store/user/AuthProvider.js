@@ -1,23 +1,12 @@
-import { createContext, useEffect, useReducer, useState } from 'react';
+import { createContext, useCallback, useEffect, useReducer, useState } from 'react';
 
-import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    updateProfile,
-    updateEmail,
-    updatePassword,
-    reauthenticateWithCredential,
-    EmailAuthProvider,
-    sendPasswordResetEmail,
-} from 'firebase/auth';
-import { auth, db } from '~/firebase/config';
+import * as authApi from '~/api/auth';
+import { getToken, setToken } from '~/api/client';
 import LoadingPage from '~/pages/LoadingPage/LoadingPage';
 import { logger } from '~/utils/logger';
 import reducer, { INITIAL_STATE } from './reducer';
-import { doc, onSnapshot } from 'firebase/firestore';
 import { forceUpdateMetaData } from './actions';
+import { subscribeUserData } from '~/firebase/services';
 
 const AuthContext = createContext();
 
@@ -25,47 +14,88 @@ function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState();
     const [loading, setLoading] = useState(true);
     const [userState, userDispatch] = useReducer(logger(reducer), INITIAL_STATE);
-    useEffect(() => {
-        const unsubscribed = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                let userRef = doc(db, 'users', user.uid);
-                onSnapshot(userRef, (snapshot) => {
-                    userDispatch(forceUpdateMetaData({ data: snapshot.data() }));
-                });
-            }
-            setCurrentUser(user);
-            setTimeout(() => setLoading(false), 1000);
-        });
-        return () => {
-            unsubscribed();
-        };
+
+    const applyAuth = useCallback((payload) => {
+        if (!payload) {
+            setCurrentUser(null);
+            userDispatch(forceUpdateMetaData({ data: {} }));
+            return;
+        }
+        setCurrentUser(payload.user);
+        userDispatch(forceUpdateMetaData({ data: payload.data }));
     }, []);
-    const createUser = (email, password) => {
-        return createUserWithEmailAndPassword(auth, email, password);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const token = getToken();
+            if (!token) {
+                if (!cancelled) {
+                    setCurrentUser(null);
+                    setLoading(false);
+                }
+                return;
+            }
+            try {
+                const data = await authApi.me();
+                if (!cancelled) applyAuth(data);
+            } catch {
+                setToken(null);
+                if (!cancelled) setCurrentUser(null);
+            } finally {
+                if (!cancelled) setTimeout(() => setLoading(false), 400);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [applyAuth]);
+
+    useEffect(() => {
+        return subscribeUserData((data) => {
+            userDispatch(forceUpdateMetaData({ data }));
+        });
+    }, []);
+
+    const createUser = async (email, password) => {
+        const payload = await authApi.signup({ email, password });
+        applyAuth(payload);
+        return { user: payload.user };
     };
 
-    const login = (email, password) => {
-        return signInWithEmailAndPassword(auth, email, password);
-    };
-    const logout = () => {
-        return signOut(auth);
+    const login = async (email, password) => {
+        const payload = await authApi.login({ email, password });
+        applyAuth(payload);
+        return { user: payload.user };
     };
 
-    const changeProfile = (username) => {
-        return updateProfile(auth.currentUser, { displayName: username });
+    const logout = async () => {
+        await authApi.logout();
+        applyAuth(null);
     };
-    const changeEmail = (email) => {
-        return updateEmail(auth.currentUser, email);
+
+    const changeProfile = async (username) => {
+        const payload = await authApi.updateProfile({ displayName: username });
+        applyAuth(payload);
+        return payload.user;
     };
-    const changePassword = (password) => {
-        return updatePassword(auth.currentUser, password);
+
+    const changeEmail = async (email) => {
+        const payload = await authApi.updateEmail({ email });
+        applyAuth(payload);
+        return payload.user;
     };
-    const reauthenticate = (password) => {
-        let credential = EmailAuthProvider.credential(currentUser.email, password);
-        return reauthenticateWithCredential(currentUser, credential);
+
+    const changePassword = async (password) => {
+        await authApi.updatePassword({ password });
     };
-    const resetPassword = (email) => {
-        return sendPasswordResetEmail(auth, email);
+
+    const reauthenticate = async (password) => {
+        await authApi.reauthenticate({ password });
+    };
+
+    const resetPassword = async (email) => {
+        await authApi.resetPassword({ email });
     };
 
     const value = {
@@ -84,4 +114,4 @@ function AuthProvider({ children }) {
 }
 
 export default AuthProvider;
-export { AuthContext, auth };
+export { AuthContext };

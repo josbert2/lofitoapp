@@ -45,14 +45,14 @@ function SceneSelector() {
                                         setMenuActive(undefined);
                                     }}
                                 >
-                                    Sign in
+                                    Iniciar sesión
                                 </Button>
                             </div>
                         )}
 
                         <div className={cx('scenes-nav')}>
                             <img src={arrowLeftIcon} alt="back" onClick={() => setSelectedSet(undefined)} />
-                            <h5 className={cx('title')}>Switch scene</h5>
+                            <h5 className={cx('title')}>Cambiar escena</h5>
                         </div>
                         {selectedSet.scenes.map((scene, index) => (
                             <div
@@ -76,7 +76,7 @@ function SceneSelector() {
                     </>
                 ) : (
                     <>
-                        <h5 className={cx('title')}>Scenes</h5>
+                        <h5 className={cx('title')}>Escenas</h5>
                         {sets.map((set, index) => (
                             <div
                                 className={cx('scene-selector')}

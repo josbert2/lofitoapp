@@ -2,68 +2,68 @@ import { profileIcon, feedback, infos, infoIcon, settingIcon, price } from '~/as
 
 export const Titles = [
     {
-        title1: 'Your calm, digital space to study,',
+        title1: 'Tu espacio digital tranquilo para estudiar,',
         title2: '',
-        msg: 'Welcome to lofi.co. Let us show you around!',
+        msg: '¡Bienvenido a lofi.co. Te mostramos cómo va!',
     },
     {
-        title1: 'The Perfect Playlist',
-        title2: 'With One Click',
-        msg: 'Hit play and get into the zone instantly. No ads. No distracting lyrics.',
-        msg2: '3 Stations to suit your mood: chill, jazzy or sleepy.',
+        title1: 'La playlist perfecta',
+        title2: 'con un solo clic',
+        msg: 'Dale al play y entra en la zona al instante. Sin anuncios. Sin letras que distraen.',
+        msg2: '3 estaciones para cada estado de ánimo: chill, jazz o relajado.',
     },
     {
-        title1: 'Craft Your Focus Environment',
+        title1: 'Crea tu entorno de concentración',
         title2: '',
-        msg: 'Would you rather get it done in the cafe, or escape to the beach? Lofi.co gives you both with interactive artworks. ',
-        msg2: 'Basic users can access 2 artworks, while premium users have exclusive access to a growing library of 13+ illustrations.',
+        msg: '¿Prefieres terminar en una cafetería o escaparte a la playa? Lofi.co te da ambas con ilustraciones interactivas. ',
+        msg2: 'Los usuarios básicos pueden acceder a 2 ilustraciones; los premium tienen acceso exclusivo a una biblioteca creciente de 13+ escenas.',
     },
     {
-        title1: 'Cut Out Distractions',
-        title2: 'With Peaceful Sounds',
-        msg: 'Drown out even the noisiest neighbour with soothing background sounds. Each artwork comes with adjustable sounds like rain, waves or birds. Some sounds change the scene’s visuals.',
-        msg2: 'Basic users get 3 sound effects. Premium users can mix and match 20+ sounds. ',
+        title1: 'Elimina las distracciones',
+        title2: 'con sonidos agradables',
+        msg: 'Tapa hasta al vecino más ruidoso con sonidos de fondo relajantes. Cada ilustración viene con sonidos ajustables como lluvia, olas o pájaros. Algunos cambian incluso la escena visualmente.',
+        msg2: 'Los básicos tienen 3 efectos de sonido. Los premium mezclan 20+. ',
     },
 
     {
-        title1: 'The Focus Zone (Premium)',
-        msg: 'Deadline coming up? The Focus Zone lets you stay on track by gathering the best focus tools in one place - away from your distracting smartphone.',
-        msg2: '- Pomodoro timer: get more done in less time (without burning out)<br/>- Notepad: never let a thought disappear<br/>- Time logger: track your progress<br/>- To-do list: always know what to do next',
+        title1: 'Zona de concentración (Premium)',
+        msg: '¿Deadline cerca? La Zona de Concentración reúne las mejores herramientas en un solo sitio — lejos del móvil que distrae.',
+        msg2: '- Temporizador Pomodoro: haz más en menos tiempo (sin quemarte)<br/>- Bloc de notas: que no se te escape ninguna idea<br/>- Registro de tiempo: mide tu progreso<br/>- Lista de tareas: siempre sabes qué sigue',
     },
 ];
 
 export const ABOUT_US = {
-    about1: 'As (mostly) students, we understand how difficult it is to just sit at your desk and focus. Especially when you have to set your music, timer and notes from three different devices or websites, while getting bombarded with ads, maybe of yet another productivity tool. We made lofi.co as a way to help you fix this and finally have a personal, calm digital space to work, study or just unwind. With a growing library of 20+ original interactive illustrations, 15+ calming ambient sounds and powerful but still easy-to-use tools like our timer with time-tracked tasks, we are now building what aims to be the go to platform for everyone working at their computer, with the goal of making productivity less stressful.',
+    about1: 'Como (en su mayoría) estudiantes, sabemos lo difícil que es sentarte en la mesa y concentrarte. Sobre todo cuando tienes que configurar la música, el timer y las notas desde tres apps distintas mientras te bombardean con anuncios de otra herramienta de productividad. Creamos lofi.co para arreglar eso y por fin tener un espacio digital personal y tranquilo para trabajar, estudiar o desconectar. Con una biblioteca creciente de 20+ ilustraciones interactivas originales, 15+ sonidos ambientales relajantes y herramientas potentes pero fáciles de usar, estamos construyendo la plataforma de referencia para quien trabaja frente al ordenador — con el objetivo de hacer la productividad menos estresante.',
 
-    about2: 'We are constantly improving, make sure to follow our socials to stay updated!',
+    about2: '¡Mejoramos constantemente. Síguenos en redes sociales para no perderte nada!',
 };
 
 export const MENU_ITEMS = [
     {
         id: 0,
-        title: 'User settings',
+        title: 'Ajustes de usuario',
         icon: profileIcon,
         modal: 'Profile',
     },
     {
         id: 1,
-        title: 'Login/Sign up',
+        title: 'Iniciar sesión / Registrarme',
         icon: profileIcon,
     },
     {
         id: 2,
-        title: 'General settings',
+        title: 'Ajustes generales',
         icon: settingIcon,
     },
     // {
     //     id: 3,
-    //     title: 'Contact us',
+    //     title: 'Contáctanos',
     //     icon: contactIcon,
     //     // to: '/contact',
     // },
     {
         id: 4,
-        title: 'How it works',
+        title: 'Cómo funciona',
         icon: infos,
         modal: 'Tutorial',
     },
@@ -75,19 +75,19 @@ export const MENU_ITEMS = [
     // },
     {
         id: 6,
-        title: 'Pricing',
+        title: 'Precios',
         icon: price,
         modal: 'Pricing',
     },
     {
         id: 7,
-        title: 'About us',
+        title: 'Sobre nosotros',
         icon: infoIcon,
         modal: 'AboutUs',
     },
     {
         id: 8,
-        title: 'Share feedback',
+        title: 'Enviar comentarios',
         icon: feedback,
         action: () => window.open('https://airtable.com/shrDWZLVdKhXg4uiA', '__bank'),
     },

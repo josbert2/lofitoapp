@@ -27,12 +27,12 @@ function ForgotPassword({ onClose, changePage }) {
         try {
             userDispatch(setAuthLoading({ status: true }));
             await resetPassword(email);
-            setAlert({ ...alert, message: 'Please check your email box!', severity: 'success' });
+            setAlert({ ...alert, message: 'Revisa tu bandeja de entrada', severity: 'success' });
         } catch (error) {
             if (error.code === 'auth/invalid-email') {
-                setAlert({ ...alert, message: 'Invalid E-mail!', severity: 'error' });
+                setAlert({ ...alert, message: 'Correo no válido', severity: 'error' });
             } else {
-                setAlert({ ...alert, message: 'Fail to send password reset email', severity: 'error' });
+                setAlert({ ...alert, message: 'No se pudo enviar el correo de recuperación', severity: 'error' });
             }
         }
         userDispatch(setAuthLoading({ status: false }));
@@ -51,8 +51,8 @@ function ForgotPassword({ onClose, changePage }) {
             <ButtonClose className={cx('pos')} onClick={onClose} />
             <div className={cx('ResetPW-form')}>
                 <img src={logoGif} alt="logo" className={cx('logoGif')} />
-                <h1 className={cx('greeting')}>Reset your password</h1>
-                <h5>Enter your email address, and we'll send instructions to reset your password.</h5>
+                <h1 className={cx('greeting')}>Recupera tu contraseña</h1>
+                <h5>Escribe tu correo y te enviaremos instrucciones para restablecerla.</h5>
                 <form id="form" onSubmit={handleSubmit}>
                     <div className={cx('form-container')}>
                         <div className={cx('form-group')}>
@@ -60,7 +60,7 @@ function ForgotPassword({ onClose, changePage }) {
                                 <input
                                     required
                                     id="email"
-                                    placeholder="Email"
+                                    placeholder="Correo electrónico"
                                     className={cx('form-input')}
                                     type="text"
                                     onChange={(e) => setEmail(e.target.value)}
@@ -69,12 +69,12 @@ function ForgotPassword({ onClose, changePage }) {
                             </div>
                         </div>
                         <Button disabled={authLoadingStatus} type="rounded" className={cx('reset-btn')}>
-                            Send Password Reset Email
+                            Enviar correo de recuperación
                         </Button>
                         <div className={cx('sign-up-option')}>
-                            <p>Don't have an account?</p>
+                            <p>¿No tienes cuenta?</p>
                             <p className={cx('accent')} onClick={changePage}>
-                                Sign Up for free
+                                Regístrate gratis
                             </p>
                         </div>
                     </div>

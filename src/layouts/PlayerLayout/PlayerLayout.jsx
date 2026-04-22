@@ -4,6 +4,7 @@ import classNames from 'classnames/bind';
 import styles from './PlayerLayout.module.scss';
 import Header from './Header';
 import Bottom from './Bottom';
+import TimerWidget from '~/components/TimerWidget';
 
 const cx = classNames.bind(styles);
 
@@ -13,6 +14,7 @@ function PlayerLayout({ children }) {
             <Header />
             <div className={cx('container')}>{children}</div>
             <Bottom />
+            <TimerWidget />
         </div>
     );
 }

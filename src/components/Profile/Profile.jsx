@@ -42,9 +42,9 @@ function Profile({ onClose }) {
             userDispatch(setAuthLoading({ status: true }));
 
             await changeProfile(username);
-            setAlert({ ...alert, message: 'Profile updated', severity: 'success' });
+            setAlert({ ...alert, message: 'Perfil actualizado', severity: 'success' });
         } catch (error) {
-            setAlert({ ...alert, message: 'Update fail', severity: 'error' });
+            setAlert({ ...alert, message: 'No se pudo actualizar', severity: 'error' });
         }
         userDispatch(setAuthLoading({ status: false }));
     };
@@ -55,12 +55,12 @@ function Profile({ onClose }) {
         try {
             userDispatch(setAuthLoading({ status: true }));
             await changeEmail(email);
-            setAlert({ ...alert, message: 'Profile updated', severity: 'success' });
+            setAlert({ ...alert, message: 'Perfil actualizado', severity: 'success' });
         } catch (error) {
             if (error.code === 'auth/email-already-in-use') {
-                setAlert({ ...alert, message: 'Email already taken.', severity: 'error' });
+                setAlert({ ...alert, message: 'Este correo ya está en uso.', severity: 'error' });
             } else if (error.code === 'auth/invalid-email') {
-                setAlert({ ...alert, message: 'Please provide a valid email.', severity: 'error' });
+                setAlert({ ...alert, message: 'Introduce un correo válido.', severity: 'error' });
             } else {
                 setAlert({ ...alert, message: error.code, severity: 'error' });
             }
@@ -73,19 +73,19 @@ function Profile({ onClose }) {
         e.preventDefault();
         setAlert({ ...alert, message: '' });
         if (newPassword !== passwordConfirm) {
-            setAlert({ ...alert, message: 'Password do not match', severity: 'error' });
+            setAlert({ ...alert, message: 'Las contraseñas no coinciden', severity: 'error' });
         } else {
             try {
                 userDispatch(setAuthLoading({ status: true }));
 
                 await reauthenticate(password);
                 await changePassword(newPassword);
-                setAlert({ ...alert, message: 'Profile updated', severity: 'success' });
+                setAlert({ ...alert, message: 'Perfil actualizado', severity: 'success' });
             } catch (error) {
                 if (error.code === 'auth/wrong-password') {
-                    setAlert({ ...alert, message: 'Current password wrong', severity: 'error' });
+                    setAlert({ ...alert, message: 'Contraseña actual incorrecta', severity: 'error' });
                 } else if (error.code === 'auth/weak-password') {
-                    setAlert({ ...alert, message: 'New password must be at least 8 characters', severity: 'error' });
+                    setAlert({ ...alert, message: 'La nueva contraseña debe tener al menos 8 caracteres', severity: 'error' });
                 } else {
                     setAlert({ ...alert, message: error.code, severity: 'error' });
                 }
@@ -95,8 +95,8 @@ function Profile({ onClose }) {
     };
 
     if (alert.message === 'auth/requires-recent-login') {
-        window.confirm('Please login again to continue!');
-        setAlert({ ...alert, message: 'Please login again to continue', severity: 'info' });
+        window.confirm('¡Por favor inicia sesión de nuevo para continuar!');
+        setAlert({ ...alert, message: 'Por favor inicia sesión de nuevo para continuar', severity: 'info' });
         handleLogOut();
     }
 
@@ -123,20 +123,20 @@ function Profile({ onClose }) {
                         className={cx('pm-nav', `${menuNav === 'profile' && 'accent'}`)}
                         onClick={() => setMenuNav('profile')}
                     >
-                        Profile
+                        Perfil
                     </div>
                     <div
                         className={cx('pm-nav', `${menuNav === 'membership' && 'accent'}`)}
                         onClick={() => setMenuNav('membership')}
                     >
-                        Membership
+                        Membresía
                     </div>
                     <div
                         className={cx('pm-nav', `${menuNav === 'logout' && 'accent'}`)}
                         onClick={handleLogOut}
                         style={{ marginTop: '30px' }}
                     >
-                        Log out
+                        Cerrar sesión
                     </div>
                 </div>
                 <div className={cx('pm-content-wrapper')}>
@@ -145,14 +145,14 @@ function Profile({ onClose }) {
                             {/* Username update */}
 
                             <div className={cx('form-group')}>
-                                <div className={cx('form-heading')}>My information</div>
+                                <div className={cx('form-heading')}>Mi información</div>
                                 <form id="profile-username" onSubmit={handleChangeUsername}>
                                     <Button disabled={authLoadingStatus} type={'outline'} className={cx('submit-btn')}>
-                                        Update
+                                        Actualizar
                                     </Button>
                                     <FormInput
                                         value={username}
-                                        label="Username"
+                                        label="Nombre de usuario"
                                         id="username"
                                         type="text"
                                         setValue={(value) => setUserName(value)}
@@ -161,14 +161,14 @@ function Profile({ onClose }) {
                             </div>
                             {/* Email update */}
                             <div className={cx('form-group')}>
-                                <div className={cx('form-heading')}>Email Address</div>
+                                <div className={cx('form-heading')}>Correo electrónico</div>
                                 <form id="profile-email" onSubmit={handleChangeEmail}>
                                     <Button disabled={authLoadingStatus} type={'outline'} className={cx('submit-btn')}>
-                                        Update Email
+                                        Actualizar correo
                                     </Button>
                                     <FormInput
                                         value={email}
-                                        label="Email Address"
+                                        label="Correo electrónico"
                                         id="email"
                                         type="email"
                                         setValue={(value) => setEmail(value)}
@@ -178,14 +178,14 @@ function Profile({ onClose }) {
                             {/* Password update */}
 
                             <div className={cx('form-group')}>
-                                <div className={cx('form-heading')}>Change Password</div>
+                                <div className={cx('form-heading')}>Cambiar contraseña</div>
                                 <form id="profile-password" onSubmit={handleChangePass}>
                                     <Button disabled={authLoadingStatus} type={'outline'} className={cx('submit-btn')}>
-                                        Change Password
+                                        Cambiar contraseña
                                     </Button>
                                     <FormInput
                                         required
-                                        label="Current Password"
+                                        label="Contraseña actual"
                                         value={password}
                                         id="current-password"
                                         type="password"
@@ -193,7 +193,7 @@ function Profile({ onClose }) {
                                     />
                                     <FormInput
                                         required
-                                        label="New Password"
+                                        label="Nueva contraseña"
                                         value={newPassword}
                                         id="new-password"
                                         type="password"
@@ -201,7 +201,7 @@ function Profile({ onClose }) {
                                     />
                                     <FormInput
                                         required
-                                        label="Confirm"
+                                        label="Confirmar"
                                         value={passwordConfirm}
                                         id="confirm-password"
                                         type="password"
@@ -213,15 +213,15 @@ function Profile({ onClose }) {
                     )}
                     {menuNav === 'membership' && (
                         <div>
-                            <div className={cx('form-heading')}>Manage Membership</div>
+                            <div className={cx('form-heading')}>Gestionar membresía</div>
                             <div className={cx('plan-item')}>
                                 <div className={cx('plan')}>
                                     <p style={{ fontSize: '1.2rem', fontWeight: 600 }}>
-                                        Free Plan <span className={cx('plan-status')}>Active</span>
+                                        Plan Gratuito <span className={cx('plan-status')}>Activo</span>
                                     </p>
-                                    <p style={{ fontWeight: 700 }}>FREE</p>
+                                    <p style={{ fontWeight: 700 }}>GRATIS</p>
                                 </div>
-                                <div className={cx('cancel')}>Cancel</div>
+                                <div className={cx('cancel')}>Cancelar</div>
                             </div>
                         </div>
                     )}

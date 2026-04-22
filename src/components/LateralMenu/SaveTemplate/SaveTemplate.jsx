@@ -67,9 +67,9 @@ function SaveTemplate() {
                 await updateUser(currentUser.uid, newData);
                 setTemplateToEdit(newTemplate);
                 setIsEdit(false);
-                setAlert({ ...alert, message: `Template's name updated`, severity: 'success' });
+                setAlert({ ...alert, message: `Nombre de la plantilla actualizado`, severity: 'success' });
             } catch (error) {
-                setAlert({ ...alert, message: `Update failed`, severity: 'error' });
+                setAlert({ ...alert, message: `No se pudo actualizar`, severity: 'error' });
             }
             setIsLoading(false);
         }
@@ -87,7 +87,7 @@ function SaveTemplate() {
             {!currentUser && (
                 <div className={cx('premium-banner')}>
                     <h4>
-                        Please <span className={cx('accent')}>sign in</span> to use our playlists and to save templates
+                        <span className={cx('accent')}>Inicia sesión</span> para usar las playlists y guardar plantillas
                     </h4>
                     <Button
                         type={'rounded'}
@@ -97,7 +97,7 @@ function SaveTemplate() {
                             setMenuActive(undefined);
                         }}
                     >
-                        Sign in
+                        Iniciar sesión
                     </Button>
                 </div>
             )}
@@ -107,7 +107,7 @@ function SaveTemplate() {
                     <div className={cx('header')}>
                         <h5 className={cx('title')}>Playlists</h5>
                         <Button type="outline" className={cx('save-btn')} leftIcon={saveIcon} onClick={handleSave}>
-                            Save Template
+                            Guardar plantilla
                         </Button>
                     </div>
                     <div className={cx('playlists-template')}>
@@ -128,7 +128,7 @@ function SaveTemplate() {
                         />
                     </div>
                     <div className={'py-6'}>
-                        <h4 className={cx('title')}>Templates</h4>
+                        <h4 className={cx('title')}>Plantillas</h4>
                         <div className={cx('templates-list')}>
                             {currentUser && templates.length > 0 ? (
                                 templates.map((template, index) => {
@@ -143,7 +143,7 @@ function SaveTemplate() {
                                     );
                                 })
                             ) : (
-                                <p className="opacity-50">You don't have any template saved</p>
+                                <p className="opacity-50">Aún no tienes plantillas guardadas</p>
                             )}
                         </div>
                     </div>
@@ -159,7 +159,7 @@ function SaveTemplate() {
                             onClick={() => setTemplateToEdit(undefined)}
                         />
                         <h4 className={cx('title')} style={{ flex: 1, textAlign: 'center' }}>
-                            View Template
+                            Ver plantilla
                         </h4>
                     </div>
                     <div className={cx('editor')}>
@@ -178,7 +178,7 @@ function SaveTemplate() {
                         <div className={cx('form-container')}>
                             {isLoading && <CircularLoading isLoading={isLoading} className={cx('loading')} />}
                             <form action="" id="name-form" onSubmit={handleEditName}>
-                                <p>Change name (enter to save)</p>
+                                <p>Cambiar nombre (pulsa enter para guardar)</p>
                                 <input
                                     type="text"
                                     defaultValue={templateToEdit.name ?? ''}
@@ -203,15 +203,15 @@ function SaveTemplate() {
                             );
                         })}
                     </div>
-                    <h5 className={cx('sub-title')}>Mood</h5>
+                    <h5 className={cx('sub-title')}>Estilo</h5>
                     <div className={cx('moods')}>
                         <div className={cx('mood-item', `${templateToEdit.mood === 'sleepy' && 'selected'}`)}>
                             <img src={sleepyIcon} alt="sleepy" className={cx('mood-icon')} />
-                            <p>Sleepy</p>
+                            <p>Relajado</p>
                         </div>
                         <div className={cx('mood-item', `${templateToEdit.mood === 'jazzy' && 'selected'}`)}>
                             <img src={jazzyIcon} alt="jazzy" className={cx('mood-icon')} />
-                            <p>Jazzy</p>
+                            <p>Jazz</p>
                         </div>
                         <div className={cx('mood-item', `${templateToEdit.mood === 'chill' && 'selected'}`)}>
                             <img src={chillIcon} alt="chill" className={cx('mood-icon')} />

@@ -53,11 +53,11 @@ function SignUp({ onClose, changePage }) {
             window.location.reload();
         } catch (error) {
             if (error.code === 'auth/email-already-in-use') {
-                setAlert({ ...alert, message: 'Email already in use!', severity: 'error' });
+                setAlert({ ...alert, message: 'Este correo ya está registrado', severity: 'error' });
             } else if (error.code === 'auth/invalid-email') {
-                setAlert({ ...alert, message: 'Invalid E-mail!', severity: 'error' });
+                setAlert({ ...alert, message: 'Correo no válido', severity: 'error' });
             } else if (error.code === 'auth/weak-password') {
-                setAlert({ ...alert, message: 'Password too short, min 8 characters', severity: 'error' });
+                setAlert({ ...alert, message: 'La contraseña debe tener al menos 8 caracteres', severity: 'error' });
             } else {
                 setAlert({ ...alert, message: error.code, severity: 'error' });
             }
@@ -77,15 +77,15 @@ function SignUp({ onClose, changePage }) {
             <ButtonClose className={cx('pos')} onClick={onClose} />
             <div className={cx('signUp-form')}>
                 <img src={logoGif} alt="logo" className={cx('logoGif')} />
-                <h1 className={cx('greeting')}>Nice to meet you!</h1>
-                <h4>Sign up for a free account.</h4>
+                <h1 className={cx('greeting')}>¡Encantado de conocerte!</h1>
+                <h4>Crea tu cuenta gratis.</h4>
                 <form onSubmit={handleSubmit} id="form">
                     <div className={cx('form-container')}>
                         <div className={cx('form-group')}>
                             <div className={cx('form-control')}>
                                 <input
                                     id="username"
-                                    placeholder="Username"
+                                    placeholder="Nombre de usuario"
                                     className={cx('signUp-input', 'separator')}
                                     type="text"
                                     onChange={(e) => {
@@ -98,7 +98,7 @@ function SignUp({ onClose, changePage }) {
                                 <input
                                     required
                                     id="email"
-                                    placeholder="Email"
+                                    placeholder="Correo electrónico"
                                     className={cx('signUp-input', 'separator')}
                                     type="email"
                                     onChange={(e) => {
@@ -111,7 +111,7 @@ function SignUp({ onClose, changePage }) {
                                 <input
                                     required
                                     id="password"
-                                    placeholder="password"
+                                    placeholder="Contraseña"
                                     className={cx('signUp-input')}
                                     type={isHidden ? 'password' : 'text'}
                                     onChange={(e) => {
@@ -128,16 +128,16 @@ function SignUp({ onClose, changePage }) {
                             </div>
                         </div>
                         <p className={cx('privacy')}>
-                            By signing up, you agree to our <br />
-                            <span className={cx('accent')}>Privacy Policy & Terms of Service</span>
+                            Al registrarte aceptas nuestra <br />
+                            <span className={cx('accent')}>Política de Privacidad y Términos del Servicio</span>
                         </p>
                         <Button disabled={authLoadingStatus} type="rounded" className={cx('signUp-btn')}>
-                            Sign up
+                            Registrarme
                         </Button>
                         <div className={cx('login-option')}>
-                            <p>Already have an account?</p>
+                            <p>¿Ya tienes cuenta?</p>
                             <p className={cx('accent')} onClick={changePage}>
-                                Log In
+                                Iniciar sesión
                             </p>
                         </div>
                     </div>

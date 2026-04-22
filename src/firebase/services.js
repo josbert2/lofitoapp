@@ -1,33 +1,31 @@
-import { db } from './config';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { replaceTemplates } from '~/api/auth';
 
-export const getUserData = async (uid) => {
-    const userRef = doc(db, 'users', uid);
+const listeners = new Set();
 
-    const userSnap = await getDoc(userRef);
+export const subscribeUserData = (fn) => {
+    listeners.add(fn);
+    return () => {
+        listeners.delete(fn);
+    };
+};
 
-    if (userSnap.exists()) {
-        return userSnap.data();
-    } else {
-        return {};
+const notify = (data) => {
+    listeners.forEach((fn) => fn(data));
+};
+
+export const getUserData = async () => ({});
+
+export const addUSer = async () => {
+    // no-op: signup endpoint already creates the user row server-side
+};
+
+export const updateUser = async (_uid, data) => {
+    if (Array.isArray(data?.templates)) {
+        const { templates } = await replaceTemplates(data.templates);
+        const next = { ...data, templates };
+        notify(next);
+        return next;
     }
-};
-
-export const addUSer = async (uid, data) => {
-    const userRef = doc(db, 'users', uid);
-
-    await setDoc(userRef, {
-        ...data,
-        templates: [],
-        createdAt: serverTimestamp(),
-        modifiedAt: serverTimestamp(),
-    });
-};
-
-export const updateUser = async (uid, data) => {
-    const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, {
-        ...data,
-        modifiedAt: serverTimestamp(),
-    });
+    notify(data);
+    return data;
 };

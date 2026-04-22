@@ -1,0 +1,64 @@
+@import '../panel.shared.scss';
+
+%dropzone-base {
+    border: 1.5px dashed #2a2a2a;
+    border-radius: 12px;
+    padding: 28px 16px;
+    text-align: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    strong {
+        color: var(--color-primary);
+    }
+    &:hover {
+        border-color: #5293f3;
+        background: #5293f30d;
+    }
+}
+.dropzone {
+    @extend %dropzone-base;
+}
+.dropzone-active {
+    @extend %dropzone-base;
+    border-color: var(--color-primary);
+    background: #f3a9521a;
+}
+.hidden-input {
+    display: none;
+}
+.preview {
+    flex: 1;
+    min-height: 300px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1a1a;
+    iframe,
+    object {
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+}
+.file-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a1a1a;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 1.3rem;
+    .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 220px;
+    }
+    .remove {
+        background: transparent;
+        border: none;
+        color: #ff6b6b;
+        cursor: pointer;
+        font-size: 1.4rem;
+    }
+}

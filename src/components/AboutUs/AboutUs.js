@@ -14,7 +14,7 @@ function AboutUs({ onClose }) {
             <ButtonClose className={cx('pos')} onClick={onClose} />
 
             <div className={cx('content')}>
-                <h1 className={cx('title')}>About us</h1>
+                <h1 className={cx('title')}>Sobre nosotros</h1>
                 <p>{ABOUT_US.about1}</p>
                 <br />
                 <br />

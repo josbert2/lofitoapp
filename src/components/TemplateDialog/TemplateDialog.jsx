@@ -53,20 +53,20 @@ function TemplateDialog({ onClose }) {
             {isLoading && <CircularLoading isLoading={isLoading} className={cx('loading')} />}
             <ButtonClose className={cx('pos')} onClick={onClose} />
             <div className={cx('inner')}>
-                <h1 className={cx('title')}>Save Template</h1>
+                <h1 className={cx('title')}>Guardar plantilla</h1>
                 <form id="save-form" onSubmit={handleSaveTemplate}>
                     <input
                         className={'general-input'}
                         type="text"
-                        placeholder="Name of the template"
+                        placeholder="Nombre de la plantilla"
                         onChange={(e) => setName(e.target.value)}
                     />
                     <Button type={'rounded'} leftIcon={saveIcon} className={cx('save-btn')} disabled={isLoading}>
-                        Save
+                        Guardar
                     </Button>
                 </form>
                 <Button type={'clear'} className={cx('cancel-btn')} onClick={onClose}>
-                    Cancel
+                    Cancelar
                 </Button>
             </div>
         </div>

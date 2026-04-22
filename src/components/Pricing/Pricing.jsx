@@ -18,10 +18,10 @@ function Pricing({ onClose }) {
             <ButtonClose className={cx('pos')} onClick={onClose} />
 
             <div className={cx('left-col')}>
-                <h3 className={cx('title')}>Get more done with premium</h3>
+                <h3 className={cx('title')}>Consigue más con premium</h3>
 
                 <div className={cx('options')}>
-                    <p style={{ opacity: isYearly ? 0.4 : 1 }}>Pay monthly</p>
+                    <p style={{ opacity: isYearly ? 0.4 : 1 }}>Pago mensual</p>
                     <Switch
                         height={30}
                         width={56}
@@ -36,21 +36,21 @@ function Pricing({ onClose }) {
                         handleDiameter={25}
                         activeBoxShadow="0 0 0 0 transparent"
                     />
-                    <p style={{ opacity: isYearly ? 1 : 0.4 }}>Pay yearly</p>
+                    <p style={{ opacity: isYearly ? 1 : 0.4 }}>Pago anual</p>
                     <div className={cx('save-label')} style={{ opacity: isYearly ? 1 : 0 }}>
-                        Save 25%
+                        Ahorra 25%
                     </div>
                 </div>
 
                 <div className={cx('plans')}>
                     <div className={cx('plan-basic', 'box')}>
-                        <h3 className={cx('plan-name')}>Basic</h3>
+                        <h3 className={cx('plan-name')}>Básico</h3>
                         <p className={cx('price')}>$0</p>
                         <p className={cx('guarantee-note')}>
                             <br />
                         </p>
                         <Button type={'rounded'} className={cx('basic-btn')}>
-                            Current Plan
+                            Plan actual
                         </Button>
                         <div className={cx('features-list')}>
                             {BASIC_FEATURES.map((item, index) => (
@@ -73,11 +73,11 @@ function Pricing({ onClose }) {
                     <div className={cx('plan-premium', 'box')}>
                         <h3 className={cx('plan-name')}>Premium</h3>
                         <p className={cx('price')}>
-                            {isYearly ? '$2,99' : '$3.99'} <span>/ mo</span>
+                            {isYearly ? '$2,99' : '$3.99'} <span>/ mes</span>
                         </p>
-                        <p className={cx('guarantee-note')}>*7-day money back guarantee</p>
+                        <p className={cx('guarantee-note')}>*7 días de garantía de reembolso</p>
                         <Button type={'rounded'} className={cx('premium-btn')}>
-                            Upgrade
+                            Mejorar plan
                         </Button>
                         <div className={cx('features-list')}>
                             {PREMIUM_FEATURES.map((item, index) => (
@@ -101,18 +101,18 @@ function Pricing({ onClose }) {
                         </div>
                     </div>
                 </div>
-                <div className={cx('more-info')}>*1% of every sale supports mental health organizations worldwide</div>
+                <div className={cx('more-info')}>*El 1% de cada venta apoya organizaciones de salud mental en todo el mundo</div>
             </div>
             <div className={cx('right-col')}>
                 <h3 className={cx('title')}>
-                    Join the <span className={cx('accent')}>lofi.co</span> family
+                    Únete a la familia <span className={cx('accent')}>lofi.co</span>
                 </h3>
                 <div className={cx('box')}>
                     <h3 className={cx('accent')}>+150.000</h3>
-                    <p>Users chilling every month</p>
+                    <p>Usuarios relajándose cada mes</p>
                 </div>
-                <h3 className={cx('title')}>Don't believe in numbers?</h3>
-                <h6>Read what users write on socials about us.</h6>
+                <h3 className={cx('title')}>¿No te convencen los números?</h3>
+                <h6>Lee lo que dicen nuestros usuarios en redes sociales.</h6>
 
                 <div className={cx('mosaic')}>
                     <Carousel />

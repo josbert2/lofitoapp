@@ -7,13 +7,16 @@ import GlobalStyles from '~/components/GlobalStyles';
 import { AppProvider } from './store/session';
 import './index.css';
 import { AuthProvider } from './store/user';
+import { TimerProvider } from './store/timer';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <GlobalStyles>
             <AuthProvider>
                 <AppProvider>
-                    <App />
+                    <TimerProvider>
+                        <App />
+                    </TimerProvider>
                 </AppProvider>
             </AuthProvider>
     </GlobalStyles>,
