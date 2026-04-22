@@ -19,8 +19,9 @@ export const setToken = (token) => {
     }
 };
 
+const envUrl = process.env.REACT_APP_API_URL;
 const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
+    baseURL: typeof envUrl === 'string' ? envUrl : 'http://localhost:3001',
 });
 
 api.interceptors.request.use((config) => {
