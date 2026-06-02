@@ -16,6 +16,29 @@
         align-items: center;
         transition: all 0.5s ease;
 
+        .texts {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .scene-name {
+            margin: 0;
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 1.25;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+        }
+
+        .credit {
+            margin: 0;
+            color: #fff;
+            font-size: 11px;
+            opacity: 0.6;
+            line-height: 1.25;
+        }
+
         .title {
             height: 70px;
             margin: 0 16px;

@@ -12,6 +12,7 @@ function Bottom() {
     const [, sessionDispatch] = session;
     const playing = useSelector(SessionSelect.getPlayingStatus);
     const currentTrack = useSelector(SessionSelect.getCurrentTrack);
+    const currentSet = useSelector(SessionSelect.getSet);
 
     const handelPlayPause = () => {
         sessionDispatch(playAndPauseAudio());
@@ -28,7 +29,12 @@ function Bottom() {
     return (
         <div className={cx('bottom-bar')}>
             <div className={cx('artist-info')}>
-                <p>{!!currentTrack.title?.length ? 'Music by -' : 'Music by - lofi.co 2021 ©'}</p>
+                <div className={cx('texts')}>
+                    {currentSet?.name && <p className={cx('scene-name')}>{currentSet.name}</p>}
+                    <p className={cx('credit')}>
+                        {!!currentTrack.title?.length ? 'Music by -' : 'Music by - lofi.co 2021 ©'}
+                    </p>
+                </div>
 
                 {currentTrack.title?.length && currentTrack.title?.includes('https:') && (
                     <img src={currentTrack.title} alt="title" className={cx('title')} onClick={handleOpenLink} />

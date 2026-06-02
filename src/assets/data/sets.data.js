@@ -142,3 +142,41 @@ export const sets = [
         premium: true,
     },
 ];
+
+// Snapshot del catálogo original (al cargar el módulo, antes de hidratar) para
+// que el admin pueda "importar el catálogo actual" y sembrar la DB.
+export const staticSets = JSON.parse(JSON.stringify(sets));
+
+// Mapea un set del catálogo de la API a la forma que consume el player.
+const mapApiSet = (s) => ({
+    _id: s._id ?? s.slug,
+    id: s.id,
+    name: s.name,
+    thumbnail: s.thumbnail,
+    effects: Array.isArray(s.effects) ? s.effects : [],
+    premium: !!s.premium,
+    scenes: (Array.isArray(s.scenes) ? s.scenes : []).map((sc) => ({
+        sceneKey: sc.sceneKey,
+        thumbnail: sc.thumbnail,
+        wallpaper: sc.wallpaper,
+        variants: sc.variants ?? {},
+        actions: Array.isArray(sc.actions) ? sc.actions : [],
+    })),
+});
+
+// Combina el catálogo estático con el de la API (mutación in-place para
+// preservar la referencia del array que el store y los componentes importan).
+// Regla: un set estático se sigue mostrando salvo que su slug esté gestionado
+// en la DB (managedSlugs) — ahí manda la DB (publicar/ocultar). Los sets de la
+// DB no estáticos se agregan al final. Si la DB está vacía, queda lo estático.
+export function hydrateSets(apiSets, managedSlugs = []) {
+    if (!Array.isArray(apiSets)) return false;
+    const mapped = apiSets.map(mapApiSet).filter((s) => s.scenes.length > 0);
+    const managed = new Set(managedSlugs || []);
+    if (!mapped.length && managed.size === 0) return false; // DB vacío → catálogo estático intacto
+
+    const base = JSON.parse(JSON.stringify(staticSets)).filter((s) => !managed.has(s._id));
+    sets.length = 0;
+    sets.push(...base, ...mapped);
+    return true;
+}

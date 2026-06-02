@@ -5,6 +5,13 @@ import crypto from 'crypto';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
+import os from 'node:os';
+import path from 'node:path';
+import { writeFile, readFile, mkdtemp, rm } from 'node:fs/promises';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { r2, r2Enabled, R2_BUCKET_NAME, r2PublicUrl } from './r2.js';
+import { compressVideo, makeThumbnail } from './media.js';
 
 const {
     PORT = 3001,
@@ -66,6 +73,64 @@ const publicUser = (u) => ({
     displayName: u.displayName,
     photoURL: u.photoURL,
     emailVerified: !!u.emailVerified,
+    isAdmin: !!u.is_admin,
+});
+
+const requireAdmin = async (req, _res, next) => {
+    try {
+        const [rows] = await pool.query('SELECT is_admin FROM users WHERE id = :id', { id: req.userId });
+        if (!rows.length || !rows[0].is_admin) throw httpError(403, 'auth/forbidden');
+        next();
+    } catch (e) {
+        next(e);
+    }
+};
+
+// JSON columns vienen ya parseadas desde mysql2, pero por las dudas toleramos string.
+const jsonCol = (v, fallback) => {
+    if (v == null) return fallback;
+    if (typeof v === 'string') {
+        try {
+            return JSON.parse(v);
+        } catch {
+            return fallback;
+        }
+    }
+    return v;
+};
+
+const rowToCatalogScene = (r) => ({
+    id: r.id,
+    sceneKey: r.sceneKey,
+    thumbnail: r.thumbnail,
+    wallpaper: r.wallpaper,
+    variants: jsonCol(r.variants, {}),
+    actions: jsonCol(r.actions, []),
+    isPublic: !!r.is_public,
+    sortOrder: r.sort_order,
+});
+
+const rowToCatalogSet = (r, scenes) => ({
+    _id: r.slug,
+    id: r.id,
+    slug: r.slug,
+    name: r.name,
+    thumbnail: r.thumbnail,
+    effects: jsonCol(r.effects, []),
+    premium: !!r.premium,
+    isPublic: !!r.is_public,
+    sortOrder: r.sort_order,
+    scenes: scenes || [],
+});
+
+const rowToCatalogTrack = (r) => ({
+    id: r.id,
+    mood: r.mood,
+    title: r.title,
+    artist: r.artist,
+    url: r.url,
+    isPublic: !!r.is_public,
+    sortOrder: r.sort_order,
 });
 
 const rowToTemplate = (r) => ({
@@ -408,6 +473,440 @@ app.delete('/api/notes/:id', requireAuth, async (req, res, next) => {
         );
         if (!result.affectedRows) throw httpError(404, 'notes/not-found');
         res.json({ ok: true });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- catálogo (público) -----------------------------------------------------
+
+// Catálogo publicado, en la misma forma que consumen los archivos estáticos del
+// front: { sets: [{ _id, name, thumbnail, effects, premium, scenes: [...] }], tracks: { chill, jazzy, sleepy } }
+app.get('/api/catalog', async (_req, res, next) => {
+    try {
+        const [setRows] = await pool.query(
+            'SELECT * FROM catalog_sets WHERE is_public = 1 ORDER BY sort_order ASC, id ASC'
+        );
+        const [sceneRows] = await pool.query(
+            'SELECT * FROM catalog_scenes WHERE is_public = 1 ORDER BY sort_order ASC, id ASC'
+        );
+        const [trackRows] = await pool.query(
+            'SELECT * FROM catalog_tracks WHERE is_public = 1 ORDER BY sort_order ASC, id ASC'
+        );
+
+        const scenesBySet = new Map();
+        for (const r of sceneRows) {
+            if (!scenesBySet.has(r.setId)) scenesBySet.set(r.setId, []);
+            scenesBySet.get(r.setId).push(rowToCatalogScene(r));
+        }
+        // un set sin escenas públicas no sirve para el player → se omite
+        const sets = setRows
+            .map((r) => rowToCatalogSet(r, scenesBySet.get(r.id)))
+            .filter((s) => s.scenes.length > 0);
+
+        const tracks = { chill: [], jazzy: [], sleepy: [] };
+        for (const r of trackRows) {
+            if (!tracks[r.mood]) tracks[r.mood] = [];
+            tracks[r.mood].push({ url: r.url, title: r.title, artist: r.artist });
+        }
+
+        // slugs gestionados en la DB (publicados o no). El front usa esto para
+        // decidir qué sets estáticos seguir mostrando: si un slug está acá,
+        // manda la DB (incluido ocultarlo); si no, se muestra el estático.
+        const [allSlugRows] = await pool.query('SELECT slug FROM catalog_sets');
+        const managedSlugs = allSlugRows.map((r) => r.slug);
+
+        res.json({ sets, tracks, managedSlugs });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- catálogo (admin) -------------------------------------------------------
+
+// Catálogo completo (incluye no publicados) para administrar.
+app.get('/api/admin/catalog', requireAuth, requireAdmin, async (_req, res, next) => {
+    try {
+        const [setRows] = await pool.query('SELECT * FROM catalog_sets ORDER BY sort_order ASC, id ASC');
+        const [sceneRows] = await pool.query('SELECT * FROM catalog_scenes ORDER BY sort_order ASC, id ASC');
+        const [trackRows] = await pool.query('SELECT * FROM catalog_tracks ORDER BY mood ASC, sort_order ASC, id ASC');
+
+        const scenesBySet = new Map();
+        for (const r of sceneRows) {
+            if (!scenesBySet.has(r.setId)) scenesBySet.set(r.setId, []);
+            scenesBySet.get(r.setId).push(rowToCatalogScene(r));
+        }
+        const sets = setRows.map((r) => rowToCatalogSet(r, scenesBySet.get(r.id)));
+        const tracks = trackRows.map(rowToCatalogTrack);
+        res.json({ sets, tracks });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// Importar el catálogo estático actual del front (reset completo). El front
+// manda { sets: [...sets.data], tracks: playlistsBase }. Reemplaza todo.
+app.post('/api/admin/seed', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const { sets = [], tracks = {} } = req.body || {};
+        if (!Array.isArray(sets)) throw httpError(400, 'catalog/invalid-sets');
+
+        const conn = await pool.getConnection();
+        try {
+            await conn.beginTransaction();
+            await conn.query('DELETE FROM catalog_tracks');
+            await conn.query('DELETE FROM catalog_scenes');
+            await conn.query('DELETE FROM catalog_sets');
+
+            let setOrder = 0;
+            for (const s of sets) {
+                const slug = String(s._id ?? s.slug ?? `set-${setOrder}`);
+                const [r] = await conn.query(
+                    `INSERT INTO catalog_sets (slug, name, thumbnail, effects, premium, is_public, sort_order)
+                     VALUES (:slug, :name, :thumbnail, :effects, :premium, 1, :sort)`,
+                    {
+                        slug,
+                        name: String(s.name ?? slug),
+                        thumbnail: s.thumbnail ?? null,
+                        effects: JSON.stringify(Array.isArray(s.effects) ? s.effects : []),
+                        premium: s.premium ? 1 : 0,
+                        sort: setOrder++,
+                    }
+                );
+                const setId = r.insertId;
+                let sceneOrder = 0;
+                for (const sc of Array.isArray(s.scenes) ? s.scenes : []) {
+                    await conn.query(
+                        `INSERT INTO catalog_scenes (setId, sceneKey, thumbnail, wallpaper, variants, actions, is_public, sort_order)
+                         VALUES (:setId, :sceneKey, :thumbnail, :wallpaper, :variants, :actions, 1, :sort)`,
+                        {
+                            setId,
+                            sceneKey: String(sc.sceneKey ?? sc.key ?? `${slug}-${sceneOrder}`),
+                            thumbnail: sc.thumbnail ?? null,
+                            wallpaper: sc.wallpaper ?? null,
+                            variants: JSON.stringify(sc.variants ?? {}),
+                            actions: JSON.stringify(Array.isArray(sc.actions) ? sc.actions : []),
+                            sort: sceneOrder++,
+                        }
+                    );
+                }
+            }
+
+            for (const [mood, list] of Object.entries(tracks)) {
+                if (!Array.isArray(list)) continue;
+                let order = 0;
+                for (const t of list) {
+                    if (!t || !t.url) continue;
+                    await conn.query(
+                        `INSERT INTO catalog_tracks (mood, title, artist, url, is_public, sort_order)
+                         VALUES (:mood, :title, :artist, :url, 1, :sort)`,
+                        {
+                            mood: String(mood),
+                            title: t.title ?? null,
+                            artist: t.artist ?? null,
+                            url: String(t.url),
+                            sort: order++,
+                        }
+                    );
+                }
+            }
+            await conn.commit();
+        } catch (txErr) {
+            await conn.rollback();
+            throw txErr;
+        } finally {
+            conn.release();
+        }
+
+        const [counts] = await pool.query(
+            `SELECT
+                (SELECT COUNT(*) FROM catalog_sets) AS sets,
+                (SELECT COUNT(*) FROM catalog_scenes) AS scenes,
+                (SELECT COUNT(*) FROM catalog_tracks) AS tracks`
+        );
+        res.json({ ok: true, counts: counts[0] });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// helper: arma SET parcial para PATCH a partir de un mapa campo→columna
+const buildPatch = (body, map) => {
+    const sets = [];
+    const params = {};
+    for (const [key, col] of Object.entries(map)) {
+        if (Object.prototype.hasOwnProperty.call(body || {}, key)) {
+            let val = body[key];
+            if (col.json) val = JSON.stringify(val ?? (col.array ? [] : {}));
+            else if (col.bool) val = val ? 1 : 0;
+            sets.push(`${col.name} = :${key}`);
+            params[key] = val;
+        }
+    }
+    return { sets, params };
+};
+
+const SET_MAP = {
+    slug: { name: 'slug' },
+    name: { name: 'name' },
+    thumbnail: { name: 'thumbnail' },
+    effects: { name: 'effects', json: true, array: true },
+    premium: { name: 'premium', bool: true },
+    isPublic: { name: 'is_public', bool: true },
+    sortOrder: { name: 'sort_order' },
+};
+const SCENE_MAP = {
+    setId: { name: 'setId' },
+    sceneKey: { name: 'sceneKey' },
+    thumbnail: { name: 'thumbnail' },
+    wallpaper: { name: 'wallpaper' },
+    variants: { name: 'variants', json: true },
+    actions: { name: 'actions', json: true, array: true },
+    isPublic: { name: 'is_public', bool: true },
+    sortOrder: { name: 'sort_order' },
+};
+const TRACK_MAP = {
+    mood: { name: 'mood' },
+    title: { name: 'title' },
+    artist: { name: 'artist' },
+    url: { name: 'url' },
+    isPublic: { name: 'is_public', bool: true },
+    sortOrder: { name: 'sort_order' },
+};
+
+// --- sets CRUD ---
+app.post('/api/admin/sets', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const b = req.body || {};
+        if (!b.slug || !b.name) throw httpError(400, 'catalog/missing-fields');
+        const [r] = await pool.query(
+            `INSERT INTO catalog_sets (slug, name, thumbnail, effects, premium, is_public, sort_order)
+             VALUES (:slug, :name, :thumbnail, :effects, :premium, :isPublic, :sortOrder)`,
+            {
+                slug: String(b.slug),
+                name: String(b.name),
+                thumbnail: b.thumbnail ?? null,
+                effects: JSON.stringify(Array.isArray(b.effects) ? b.effects : []),
+                premium: b.premium ? 1 : 0,
+                isPublic: b.isPublic ? 1 : 0,
+                sortOrder: Number.isFinite(b.sortOrder) ? b.sortOrder : 0,
+            }
+        );
+        const [rows] = await pool.query('SELECT * FROM catalog_sets WHERE id = :id', { id: r.insertId });
+        res.status(201).json({ set: rowToCatalogSet(rows[0], []) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.patch('/api/admin/sets/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'catalog/invalid-id');
+        const { sets, params } = buildPatch(req.body, SET_MAP);
+        if (!sets.length) throw httpError(400, 'catalog/no-fields');
+        const [r] = await pool.query(`UPDATE catalog_sets SET ${sets.join(', ')} WHERE id = :id`, { ...params, id });
+        if (!r.affectedRows) throw httpError(404, 'catalog/not-found');
+        const [rows] = await pool.query('SELECT * FROM catalog_sets WHERE id = :id', { id });
+        res.json({ set: rowToCatalogSet(rows[0], []) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.delete('/api/admin/sets/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'catalog/invalid-id');
+        const [r] = await pool.query('DELETE FROM catalog_sets WHERE id = :id', { id });
+        if (!r.affectedRows) throw httpError(404, 'catalog/not-found');
+        res.json({ ok: true });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- scenes CRUD ---
+app.post('/api/admin/scenes', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const b = req.body || {};
+        if (!Number.isFinite(Number(b.setId)) || !b.sceneKey) throw httpError(400, 'catalog/missing-fields');
+        const [r] = await pool.query(
+            `INSERT INTO catalog_scenes (setId, sceneKey, thumbnail, wallpaper, variants, actions, is_public, sort_order)
+             VALUES (:setId, :sceneKey, :thumbnail, :wallpaper, :variants, :actions, :isPublic, :sortOrder)`,
+            {
+                setId: Number(b.setId),
+                sceneKey: String(b.sceneKey),
+                thumbnail: b.thumbnail ?? null,
+                wallpaper: b.wallpaper ?? null,
+                variants: JSON.stringify(b.variants ?? {}),
+                actions: JSON.stringify(Array.isArray(b.actions) ? b.actions : []),
+                isPublic: b.isPublic ? 1 : 0,
+                sortOrder: Number.isFinite(b.sortOrder) ? b.sortOrder : 0,
+            }
+        );
+        const [rows] = await pool.query('SELECT * FROM catalog_scenes WHERE id = :id', { id: r.insertId });
+        res.status(201).json({ scene: rowToCatalogScene(rows[0]) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.patch('/api/admin/scenes/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'catalog/invalid-id');
+        const { sets, params } = buildPatch(req.body, SCENE_MAP);
+        if (!sets.length) throw httpError(400, 'catalog/no-fields');
+        const [r] = await pool.query(`UPDATE catalog_scenes SET ${sets.join(', ')} WHERE id = :id`, { ...params, id });
+        if (!r.affectedRows) throw httpError(404, 'catalog/not-found');
+        const [rows] = await pool.query('SELECT * FROM catalog_scenes WHERE id = :id', { id });
+        res.json({ scene: rowToCatalogScene(rows[0]) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.delete('/api/admin/scenes/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'catalog/invalid-id');
+        const [r] = await pool.query('DELETE FROM catalog_scenes WHERE id = :id', { id });
+        if (!r.affectedRows) throw httpError(404, 'catalog/not-found');
+        res.json({ ok: true });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- tracks CRUD ---
+app.post('/api/admin/tracks', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const b = req.body || {};
+        if (!b.mood || !b.url) throw httpError(400, 'catalog/missing-fields');
+        const [r] = await pool.query(
+            `INSERT INTO catalog_tracks (mood, title, artist, url, is_public, sort_order)
+             VALUES (:mood, :title, :artist, :url, :isPublic, :sortOrder)`,
+            {
+                mood: String(b.mood),
+                title: b.title ?? null,
+                artist: b.artist ?? null,
+                url: String(b.url),
+                isPublic: b.isPublic === false ? 0 : 1,
+                sortOrder: Number.isFinite(b.sortOrder) ? b.sortOrder : 0,
+            }
+        );
+        const [rows] = await pool.query('SELECT * FROM catalog_tracks WHERE id = :id', { id: r.insertId });
+        res.status(201).json({ track: rowToCatalogTrack(rows[0]) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.patch('/api/admin/tracks/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'catalog/invalid-id');
+        const { sets, params } = buildPatch(req.body, TRACK_MAP);
+        if (!sets.length) throw httpError(400, 'catalog/no-fields');
+        const [r] = await pool.query(`UPDATE catalog_tracks SET ${sets.join(', ')} WHERE id = :id`, { ...params, id });
+        if (!r.affectedRows) throw httpError(404, 'catalog/not-found');
+        const [rows] = await pool.query('SELECT * FROM catalog_tracks WHERE id = :id', { id });
+        res.json({ track: rowToCatalogTrack(rows[0]) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.delete('/api/admin/tracks/:id', requireAuth, requireAdmin, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'catalog/invalid-id');
+        const [r] = await pool.query('DELETE FROM catalog_tracks WHERE id = :id', { id });
+        if (!r.affectedRows) throw httpError(404, 'catalog/not-found');
+        res.json({ ok: true });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// --- upload a R2 ------------------------------------------------------------
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 300 * 1024 * 1024 } });
+
+const sanitizeSegment = (s) =>
+    String(s || '')
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-zA-Z0-9._-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase();
+
+const putR2 = (Key, Body, ContentType) =>
+    r2.send(new PutObjectCommand({ Bucket: R2_BUCKET_NAME, Key, Body, ContentType }));
+
+app.post('/api/admin/upload', requireAuth, requireAdmin, upload.single('file'), async (req, res, next) => {
+    try {
+        if (!r2Enabled) throw httpError(503, 'r2/not-configured');
+        if (!req.file) throw httpError(400, 'upload/no-file');
+
+        const folder = String(req.body?.folder || 'misc')
+            .split('/')
+            .map(sanitizeSegment)
+            .filter(Boolean)
+            .join('/') || 'misc';
+
+        const original = sanitizeSegment(req.file.originalname.replace(/\.[^.]+$/, '')) || 'file';
+        const extMatch = req.file.originalname.match(/\.([a-zA-Z0-9]+)$/);
+        const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : '';
+        const stamp = Date.now();
+        const isVideo = (req.file.mimetype || '').startsWith('video/');
+
+        // No-video (audio, etc.): se sube tal cual.
+        if (!isVideo) {
+            const key = `${folder}/${stamp}-${original}${ext}`;
+            await putR2(key, req.file.buffer, req.file.mimetype || 'application/octet-stream');
+            return res
+                .status(201)
+                .json({ url: r2PublicUrl(key), key, size: req.file.size, contentType: req.file.mimetype });
+        }
+
+        // Video: comprimir + sacar thumbnail antes de subir.
+        const dir = await mkdtemp(path.join(os.tmpdir(), 'lofito-'));
+        const inPath = path.join(dir, `in${ext || '.mp4'}`);
+        const outPath = path.join(dir, 'out.mp4');
+        const thumbPath = path.join(dir, 'thumb.jpg');
+        try {
+            await writeFile(inPath, req.file.buffer);
+            await compressVideo(inPath, outPath);
+
+            let thumbnailUrl = null;
+            try {
+                await makeThumbnail(inPath, thumbPath);
+                const thumbBuf = await readFile(thumbPath);
+                const thumbKey = `${folder}/thumbs/${stamp}-${original}.jpg`;
+                await putR2(thumbKey, thumbBuf, 'image/jpeg');
+                thumbnailUrl = r2PublicUrl(thumbKey);
+            } catch (thumbErr) {
+                console.warn('[upload] thumbnail falló:', thumbErr.message);
+            }
+
+            const compressed = await readFile(outPath);
+            const videoKey = `${folder}/${stamp}-${original}.mp4`;
+            await putR2(videoKey, compressed, 'video/mp4');
+
+            res.status(201).json({
+                url: r2PublicUrl(videoKey),
+                key: videoKey,
+                thumbnailUrl,
+                contentType: 'video/mp4',
+                originalSize: req.file.size,
+                size: compressed.length,
+                compressed: true,
+            });
+        } finally {
+            await rm(dir, { recursive: true, force: true }).catch(() => {});
+        }
     } catch (e) {
         next(e);
     }

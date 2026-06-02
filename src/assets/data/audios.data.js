@@ -322,4 +322,31 @@ const alarms = [
     'https://lofi-co-assets.vexcited.com/alarms/Ringtone.mp3',
     'https://lofi-co-assets.vexcited.com/alarms/Soft.mp3',
 ];
-export { playlistsBase, effects, alarms };
+// Snapshot del catálogo original (se toma al cargar el módulo, antes de
+// cualquier hidratación) para que el admin pueda "importar el catálogo actual".
+const staticTracks = JSON.parse(JSON.stringify(playlistsBase));
+
+// Hidrata las playlists desde el catálogo de la API (mutación in-place para
+// preservar la referencia del objeto que el store ya capturó). Sólo reemplaza
+// un mood si llega con tracks; si no, deja la semilla estática como fallback.
+function hydrateTracks(apiTracks) {
+    if (!apiTracks || typeof apiTracks !== 'object') return false;
+    let any = false;
+    for (const mood of Object.keys(playlistsBase)) {
+        const list = apiTracks[mood];
+        if (Array.isArray(list) && list.length) {
+            // se AGREGAN a la playlist estática (dedup por url), no se reemplaza
+            const seen = new Set(playlistsBase[mood].map((t) => t.url));
+            for (const t of list) {
+                if (t && t.url && !seen.has(t.url)) {
+                    playlistsBase[mood].push({ url: t.url, title: t.title, artist: t.artist });
+                    seen.add(t.url);
+                }
+            }
+            any = true;
+        }
+    }
+    return any;
+}
+
+export { playlistsBase, effects, alarms, hydrateTracks, staticTracks };

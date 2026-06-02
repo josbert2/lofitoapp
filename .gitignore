@@ -12,6 +12,10 @@
 # production
 /build
 
+# media de prueba — los videos/audios van a R2, no al repo
+*.mp4
+*.webm
+
 # misc
 .DS_Store
 .env

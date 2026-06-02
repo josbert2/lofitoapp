@@ -1,24 +1,33 @@
 import { effects, playlistsBase } from '~/assets/data/audios.data';
 import { sets } from '~/assets/data/sets.data';
 
-const randomNumber = Math.floor(Math.random() * playlistsBase.chill.length);
-const INITIAL_STATE = {
-    set: sets[1],
-    sceneIndex: 0,
-    sceneEffect: { active: false, effect: null },
-    night: false,
-    pixelated: false,
-    effects: effects,
-    customTracks: playlistsBase,
-    current_track: playlistsBase.chill[randomNumber],
-    playing: false,
-    level: 0.5,
-    last_level: 0,
-    playlist: 'chill',
-    history_pointer: 0,
-    history_tracks: [playlistsBase.chill[randomNumber]],
-    draggableModals: [],
-};
+// Se construye al MONTAR el provider (no al cargar el módulo) para leer el
+// catálogo ya hidratado desde la API. Tolera catálogos chicos (1 set) y
+// playlists vacías.
+export function makeInitialState() {
+    const chill = playlistsBase.chill || [];
+    const randomNumber = Math.floor(Math.random() * (chill.length || 1));
+    const firstTrack = chill[randomNumber];
+    return {
+        set: sets[1] ?? sets[0],
+        sceneIndex: 0,
+        sceneEffect: { active: false, effect: null },
+        night: false,
+        pixelated: false,
+        effects: effects,
+        customTracks: playlistsBase,
+        current_track: firstTrack,
+        playing: false,
+        level: 0.5,
+        last_level: 0,
+        playlist: 'chill',
+        history_pointer: 0,
+        history_tracks: [firstTrack],
+        draggableModals: [],
+    };
+}
+
+const INITIAL_STATE = makeInitialState();
 
 function reducer(state, action) {
     switch (action.type) {

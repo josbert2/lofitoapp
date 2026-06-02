@@ -1,13 +1,14 @@
 import React, { useState, createContext, useReducer } from 'react';
 import { logger } from '~/utils/logger';
-import reducer, { INITIAL_STATE } from './reducer';
+import reducer, { makeInitialState } from './reducer';
 
 export const AppContext = createContext();
 
 function AppProvider({ children }) {
     const [modalType, setModalType] = useState();
     const [menuActive, setMenuActive] = useState();
-    const [sessionState, sessionDispatch] = useReducer(logger(reducer), INITIAL_STATE);
+    // inicializador lazy: corre al montar, cuando el catálogo de la API ya está hidratado
+    const [sessionState, sessionDispatch] = useReducer(logger(reducer), undefined, makeInitialState);
 
     // console.log('-----------provider render------------');
     const value = {
