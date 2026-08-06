@@ -5,103 +5,226 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lofito mini</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    :root {
+        --accent: #a99bff;
+        --fg: #f5f5f7;
+        --fg2: rgba(255,255,255,.55);
+        --spring: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
     body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        -webkit-app-region: drag;
-    }
-    .card {
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+        color: var(--fg);
+        -webkit-font-smoothing: antialiased;
+        /* Pill anclado abajo-derecha de la ventana */
         display: flex;
-        align-items: center;
-        gap: 10px;
-        height: 100%;
-        padding: 8px 10px;
-        background: #171a21;
-        color: #fff;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        justify-content: flex-end;
+        align-items: flex-end;
+        padding: 8px;
     }
-    .art {
-        width: 42px; height: 42px; flex: 0 0 42px;
-        border-radius: 9px;
-        background: linear-gradient(135deg,#5b6cff,#a24bff);
-        background-size: cover; background-position: center;
-        display: grid; place-items: center; font-size: 19px;
+
+    /* ===== El pill ===== */
+    .island {
+        position: relative;
+        background: #000;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: 999px;
+        transform-origin: bottom right;
+        will-change: width, height, border-radius;
+        transition:
+            width .5s var(--spring),
+            height .5s var(--spring),
+            border-radius .5s var(--spring),
+            padding .5s var(--spring),
+            box-shadow .5s var(--spring);
     }
-    .mid { flex: 1 1 auto; min-width: 0; }
-    .title { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .artist { font-size: 10px; opacity: .55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .vol { display: flex; align-items: center; gap: 4px; margin-top: 4px; -webkit-app-region: no-drag; }
-    .vol span { font-size: 10px; opacity: .5; }
-    .vol input { width: 100%; height: 3px; accent-color: #fff; cursor: pointer; }
-    .controls { display: flex; align-items: center; gap: 4px; -webkit-app-region: no-drag; }
+
+    /* ===== Carátula ===== */
+    .art {
+        border-radius: 8px;
+        background: linear-gradient(135deg,#6a5cff,#a24bff);
+        background-size: cover; background-position: center;
+        overflow: hidden; flex: 0 0 auto;
+        display: grid; place-items: center; font-size: 14px;
+        box-shadow: 0 3px 10px rgba(0,0,0,.5);
+        transition: width .5s var(--spring), height .5s var(--spring), border-radius .5s var(--spring);
+    }
+
+    /* ===== Ecualizador ===== */
+    .eq { display: flex; align-items: center; gap: 2.5px; flex: 0 0 auto; color: var(--accent); height: 16px; }
+    .eq span { width: 2.5px; height: 6px; border-radius: 3px; background: currentColor; }
+    body.is-playing .eq span { animation: eq 1s ease-in-out infinite; }
+    .eq span:nth-child(1){ animation-delay: -.9s } .eq span:nth-child(2){ animation-delay: -.5s }
+    .eq span:nth-child(3){ animation-delay: -.1s } .eq span:nth-child(4){ animation-delay: -.7s }
+    @keyframes eq { 0%,100%{ height: 4px } 50%{ height: 14px } }
+
+    .row-top { display: flex; align-items: center; width: 100%; }
+    .meta, .progress, .controls { transition: opacity .35s var(--spring); }
+
+    /* =======================  COLAPSADO (pill chico)  ======================= */
+    body.collapsed .island { width: 152px; height: 40px; padding: 0 13px; border-radius: 999px; box-shadow: 0 8px 22px rgba(0,0,0,.45); }
+    body.collapsed .row-top { height: 100%; justify-content: space-between; }
+    body.collapsed .art { width: 26px; height: 26px; border-radius: 7px; }
+    body.collapsed .meta, body.collapsed .progress, body.collapsed .controls, body.collapsed .open { display: none; }
+
+    /* =======================  EXPANDIDO (Now Playing)  ======================= */
+    body.expanded .island {
+        width: 344px; height: 130px;
+        padding: 13px 16px 14px; gap: 9px;
+        border-radius: 26px;
+        box-shadow:
+            0 20px 50px -12px rgba(0,0,0,.55),
+            0 8px 20px -4px rgba(0,0,0,.45),
+            0 2px 8px -2px rgba(0,0,0,.6);
+    }
+    body.expanded .row-top { gap: 12px; }
+    body.expanded .art { width: 46px; height: 46px; border-radius: 11px; }
+
+    .meta { flex: 1 1 auto; min-width: 0; }
+    .title { font-size: 14px; font-weight: 600; letter-spacing: -.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .artist { font-size: 12px; margin-top: 1px; color: var(--fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .progress { display: flex; align-items: center; gap: 9px; }
+    .progress .t { font-size: 10px; color: var(--fg2); font-variant-numeric: tabular-nums; min-width: 30px; letter-spacing: -.2px; }
+    .progress .t.r { text-align: right; }
+    .track { flex: 1 1 auto; height: 4px; border-radius: 4px; background: rgba(255,255,255,.18); overflow: hidden; }
+    .fill { height: 100%; width: 0%; background: #fff; border-radius: 4px; transition: width .3s linear; }
+
+    .controls { display: flex; align-items: center; justify-content: center; gap: 24px; }
     .btn {
-        -webkit-app-region: no-drag; cursor: pointer; border: none; background: transparent; color: #fff;
-        width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
-        transition: background .15s;
+        cursor: pointer; border: none; background: transparent; color: var(--fg);
+        display: grid; place-items: center; padding: 0;
+        transition: transform .12s var(--spring), opacity .15s;
     }
-    .btn:hover { background: rgba(255,255,255,0.12); }
-    .btn.play { background: #fff; color: #171a21; width: 32px; height: 32px; font-size: 14px; }
-    .btn.play:hover { background: #e6e6e6; }
-    .expand { -webkit-app-region: no-drag; position: absolute; top: 6px; right: 8px; cursor: pointer; font-size: 11px; opacity: .4; z-index: 2; }
-    .expand:hover { opacity: .9; }
-    .wrap { position: relative; width: 100%; height: 100%; }
+    .btn:active { transform: scale(.86); }
+    .btn.side { opacity: .92; } .btn.side:hover { opacity: 1; }
+    .btn.play { width: 40px; height: 40px; border-radius: 50%; background: #fff; color: #000; }
+    .btn.play:hover { transform: scale(1.04); }
+    .btn.play:active { transform: scale(.92); }
+
+    .open {
+        position: absolute; top: 8px; right: 14px;
+        cursor: pointer; opacity: 0; transition: opacity .2s; z-index: 4; color: var(--fg2);
+    }
+    body.expanded .island:hover .open { opacity: .65; }
+    .open:hover { opacity: 1 !important; color: var(--fg); }
 </style>
 </head>
-<body>
-<div class="wrap">
-    <div class="expand" id="expand" title="Abrir Lofito">⤢</div>
-    <div class="card">
-        <div class="art" id="art">🎵</div>
-        <div class="mid">
+<body class="collapsed">
+<div class="island">
+    <div class="open" id="open" title="Abrir Lofito">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+    </div>
+
+    <div class="row-top">
+        <div class="art" id="art">♪</div>
+        <div class="meta">
             <div class="title" id="title">—</div>
             <div class="artist" id="artist"></div>
-            <div class="vol">
-                <span>🔊</span>
-                <input type="range" id="vol" min="0" max="100" value="50" />
-            </div>
         </div>
-        <div class="controls">
-            <button class="btn" id="prev" title="Anterior">⏮</button>
-            <button class="btn play" id="toggle" title="Play/Pausa">▶</button>
-            <button class="btn" id="next" title="Siguiente">⏭</button>
-        </div>
+        <div class="eq" id="eq"><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="progress">
+        <span class="t" id="elapsed">0:00</span>
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <span class="t r" id="remain">--:--</span>
+    </div>
+
+    <div class="controls">
+        <button class="btn side" id="prev" title="Anterior">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 6h2.2v12H7zM20 6v12l-9-6z" fill="currentColor"/></svg>
+        </button>
+        <button class="btn play" id="toggle" title="Play/Pausa"></button>
+        <button class="btn side" id="next" title="Siguiente">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M14.8 6H17v12h-2.2zM4 6l9 6-9 6z" fill="currentColor"/></svg>
+        </button>
     </div>
 </div>
+
 <script>
     const D = window.lofitoDesktop;
     const $ = (id) => document.getElementById(id);
-    let dragVol = false;
+
+    const PLAY  = '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+    const PAUSE = '<svg viewBox="0 0 24 24" width="17" height="17"><rect x="6" y="5" width="4" height="14" rx="1.4" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.4" fill="currentColor"/></svg>';
+
+    function fmt(s) {
+        s = Math.max(0, Math.floor(s || 0));
+        return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    // --- Hover sobre el pill (ventana fija + click-through) ---
+    const island = document.querySelector('.island');
+    let over = false, timer = null;
+
+    function expand() {
+        clearTimeout(timer);
+        if (document.body.classList.contains('expanded')) return;
+        document.body.classList.remove('collapsed');
+        document.body.classList.add('expanded');
+    }
+    function collapse() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            document.body.classList.remove('expanded');
+            document.body.classList.add('collapsed');
+        }, 220);
+    }
+    function pointInIsland(x, y) {
+        const r = island.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    }
+    window.addEventListener('mousemove', (e) => {
+        const inside = pointInIsland(e.clientX, e.clientY);
+        if (inside && !over) {
+            over = true;
+            if (D) D.setClickThrough(false);
+            expand();
+        } else if (!inside && over) {
+            over = false;
+            if (D) D.setClickThrough(true);
+            collapse();
+        }
+    });
+    document.addEventListener('mouseleave', () => {
+        if (!over) return;
+        over = false;
+        if (D) D.setClickThrough(true);
+        collapse();
+    });
 
     function render(s) {
         if (!s) return;
         $('title').textContent = s.title || 'Sin título';
         $('artist').textContent = s.artist || '';
-        $('toggle').textContent = s.playing ? '⏸' : '▶';
-        if (!dragVol && typeof s.volume === 'number') $('vol').value = Math.round(s.volume * 100);
+
+        const playing = !!s.playing;
+        $('toggle').innerHTML = playing ? PAUSE : PLAY;
+        document.body.classList.toggle('is-playing', playing);
+
         const art = $('art');
-        if (s.art) {
-            art.style.backgroundImage = `url("${s.art}")`;
-            art.textContent = '';
-        } else {
-            art.style.backgroundImage = '';
-            art.textContent = '🎵';
-        }
+        if (s.art) { art.style.backgroundImage = `url("${s.art}")`; art.textContent = ''; }
+        else { art.style.backgroundImage = ''; art.textContent = '♪'; }
+
+        const dur = Number(s.duration) || 0, el = Number(s.elapsed) || 0;
+        $('fill').style.width = (dur > 0 ? Math.min(100, (el / dur) * 100) : 0) + '%';
+        $('elapsed').textContent = fmt(el);
+        $('remain').textContent = dur > 0 ? '-' + fmt(dur - el) : '--:--';
     }
 
     if (D) {
+        $('toggle').innerHTML = PLAY;
         D.onNowPlaying(render);
         D.requestNowPlaying();
         $('prev').onclick = () => D.sendCommand('prev');
         $('next').onclick = () => D.sendCommand('next');
         $('toggle').onclick = () => D.sendCommand('toggle');
-        $('expand').onclick = () => D.restoreMain();
-        const vol = $('vol');
-        vol.oninput = () => { dragVol = true; D.sendCommand({ type: 'volume', value: Number(vol.value) / 100 }); };
-        vol.onchange = () => { dragVol = false; };
+        $('open').onclick = () => D.restoreMain();
     }
 </script>
 </body>

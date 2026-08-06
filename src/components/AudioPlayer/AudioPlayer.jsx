@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 import { useStore } from '~/hooks';
 import { useSelector } from '~/hooks/useSelector';
@@ -12,10 +12,13 @@ function AudioPlayer() {
     const playing = useSelector(SessionSelect.getPlayingStatus);
     const level = useSelector(SessionSelect.getAudioLevel);
     const currentScene = useSelector(SessionSelect.getScene);
+    // Tiempo de reproducción para la barra de progreso del widget.
+    const elapsedRef = useRef(0);
+    const durationRef = useRef(0);
 
     // --- Puente con el mini-player de escritorio (solo en Electron) ---
-    // Publica qué suena para que el widget lo muestre.
-    useEffect(() => {
+    // Arma el estado "qué suena" y lo publica para que el widget lo muestre.
+    const publishNowPlaying = useCallback(() => {
         const D = window.lofitoDesktop;
         if (!D || D.isMini) return;
         // La foto de la escena es un asset del bundle → la resolvemos a URL absoluta
@@ -35,8 +38,29 @@ function AudioPlayer() {
             playing,
             volume: level,
             art,
+            elapsed: elapsedRef.current,
+            duration: durationRef.current,
         });
     }, [currentTrack, playing, level, currentScene]);
+
+    useEffect(() => {
+        publishNowPlaying();
+    }, [publishNowPlaying]);
+
+    // Reinicia el progreso al cambiar de track.
+    useEffect(() => {
+        elapsedRef.current = 0;
+        durationRef.current = 0;
+    }, [currentTrack]);
+
+    const handleProgress = ({ playedSeconds }) => {
+        elapsedRef.current = playedSeconds || 0;
+        publishNowPlaying();
+    };
+    const handleDuration = (d) => {
+        durationRef.current = d || 0;
+        publishNowPlaying();
+    };
 
     // Ejecuta los controles que llegan desde el widget.
     useEffect(() => {
@@ -61,6 +85,9 @@ function AudioPlayer() {
                 ref={playerRef}
                 url={currentTrack.url}
                 volume={level}
+                progressInterval={500}
+                onProgress={handleProgress}
+                onDuration={handleDuration}
                 onEnded={handleNextTrack}
             />
         </div>

@@ -87,19 +87,23 @@
             "target": [
                 "nsis",
                 "portable"
-            ]
+            ],
+            "icon": "public/icon.png"
         },
         "linux": {
             "target": [
                 "AppImage",
                 "deb"
             ],
-            "category": "AudioVideo"
+            "maintainer": "Lofito <hola@bookforce.io>",
+            "category": "AudioVideo",
+            "icon": "public/icon.png"
         },
         "mac": {
             "target": [
                 "dmg"
-            ]
+            ],
+            "icon": "public/icon.png"
         }
     },
     "eslintConfig": {

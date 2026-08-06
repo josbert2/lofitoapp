@@ -27,6 +27,13 @@ contextBridge.exposeInMainWorld('lofitoDesktop', {
     // El mini-player pide restaurar la ventana principal.
     restoreMain: () => ipcRenderer.send('lofito:restore'),
 
+    // La ventana del mini es fija y transparente; el mini pide activar/desactivar
+    // el click-through según el mouse esté sobre la isla o no.
+    setClickThrough: (ignore) => ipcRenderer.send('mini:clickthrough', ignore),
+
+    // Activar/desactivar el widget flotante (toggle desde el header).
+    setWidgetEnabled: (enabled) => ipcRenderer.send('mini:setEnabled', enabled),
+
     // Controles de la ventana principal (barra de título propia).
     minimize: () => ipcRenderer.send('win:minimize'),
     maximize: () => ipcRenderer.send('win:maximize'),

@@ -33,3 +33,6 @@ yarn-error.log*
 dist-desktop/
 assets-download/
 lofi-resources/
+
+# Candidatos de icono (fuente pesada, no versionar)
+/public/asset-app/

@@ -10,6 +10,14 @@ const path = require('node:path');
 const isDev = !app.isPackaged;
 const DEV_URL = process.env.ELECTRON_START_URL || 'http://localhost:3000';
 
+// En Linux/Wayland el posicionamiento de ventanas por código se ignora (Wayland
+// no expone coordenadas globales), así que la isla no se puede anclar arriba y
+// centrada. Forzamos X11 (XWayland) donde setPosition/setBounds sí funcionan.
+// Nota: en GNOME Wayland Electron no puede posicionar ventanas (Mutter no expone
+// coordenadas globales ni wlr-layer-shell), así que la isla no se puede anclar
+// centrada arriba en esa sesión. Forzar X11 permitiría posicionar pero rompe el
+// render en esta GPU. En macOS/Windows/X11 el centrado funciona normal.
+
 const MIME = {
     '.html': 'text/html',
     '.js': 'text/javascript',
@@ -66,26 +74,51 @@ let mainWindow = null;
 let miniWindow = null;
 let baseUrl = null;
 let lastNowPlaying = null;
+let miniEnabled = true; // widget flotante activado por defecto (toggle en el header)
 
 const PRELOAD = path.join(__dirname, 'preload.js');
+
+// Monitor donde anclar el widget: el de la ventana principal (así aparece en la
+// pantalla que estás usando); si no hay, el primario.
+function miniTargetDisplay() {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        const b = mainWindow.getBounds();
+        return screen.getDisplayNearestPoint({
+            x: Math.round(b.x + b.width / 2),
+            y: Math.round(b.y + b.height / 2),
+        });
+    }
+    return screen.getPrimaryDisplay();
+}
+
+// Posición abajo-derecha del widget dentro del monitor objetivo (margen 16px).
+function miniCornerPos(w, h) {
+    const { x, y, width, height } = miniTargetDisplay().workArea;
+    return { x: x + width - w - 16, y: y + height - h - 16 };
+}
 
 // Mini-player: ventana chica, sin bordes, siempre-encima. Aparece al minimizar.
 function createMiniWindow() {
     if (miniWindow) return miniWindow;
-    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-    const W = 344;
-    const H = 92;
+    // Ventana FIJA y transparente, anclada abajo-derecha. El pill crece/encoge
+    // por CSS (no se redimensiona la ventana → sin loops de hover). El área
+    // transparente es click-through; el pill detecta el mouse por sí solo.
+    const W = 380;
+    const H = 150;
+    const { x: px, y: py } = miniCornerPos(W, H);
     miniWindow = new BrowserWindow({
         width: W,
         height: H,
-        x: sw - W - 20,
-        y: sh - H - 20,
+        x: px,
+        y: py,
         frame: false,
         resizable: false,
-        movable: true,
+        movable: false,
+        focusable: false,
         skipTaskbar: true,
         alwaysOnTop: true,
         transparent: true,
+        hasShadow: false,
         show: false,
         backgroundColor: '#00000000',
         webPreferences: {
@@ -95,7 +128,10 @@ function createMiniWindow() {
             additionalArguments: ['--lofito-mini'],
         },
     });
-    miniWindow.setAlwaysOnTop(true, 'floating');
+    miniWindow.setAlwaysOnTop(true, 'screen-saver');
+    // Arranca click-through: los clics pasan al escritorio salvo sobre la isla.
+    // forward:true reenvía los mousemove para poder detectar el hover.
+    miniWindow.setIgnoreMouseEvents(true, { forward: true });
     miniWindow.loadURL(`${baseUrl}/mini.html`);
     miniWindow.on('closed', () => {
         miniWindow = null;
@@ -105,6 +141,10 @@ function createMiniWindow() {
 
 function showMini() {
     const w = createMiniWindow();
+    // Reanclar abajo-derecha en el monitor donde está la ventana principal.
+    const [ww, wh] = w.getSize();
+    const { x, y } = miniCornerPos(ww, wh);
+    w.setPosition(x, y);
     if (lastNowPlaying) w.webContents.send('lofito:nowplaying', lastNowPlaying);
     w.showInactive();
 }
@@ -120,6 +160,7 @@ async function createWindow() {
         minWidth: 900,
         minHeight: 600,
         backgroundColor: '#0f1115',
+        icon: path.join(__dirname, 'icon.png'),
         title: 'Lofito',
         autoHideMenuBar: true,
         // Sin barra de título ni menú ni botones nativos: dibujamos controles
@@ -138,8 +179,10 @@ async function createWindow() {
         return { action: 'deny' };
     });
 
-    // Mostrar el mini-player al minimizar; ocultarlo al volver.
-    mainWindow.on('minimize', showMini);
+    // Mostrar el mini-player al minimizar (si está activado); ocultarlo al volver.
+    mainWindow.on('minimize', () => {
+        if (miniEnabled) showMini();
+    });
     mainWindow.on('restore', hideMini);
     mainWindow.on('focus', hideMini);
     mainWindow.on('show', hideMini);
@@ -169,6 +212,20 @@ function setupIpc() {
             mainWindow.restore();
             mainWindow.focus();
         }
+    });
+
+    // El mini activa/desactiva el click-through: interactivo sobre la isla,
+    // transparente al mouse (clics pasan al escritorio) fuera de ella.
+    ipcMain.on('mini:clickthrough', (_e, ignore) => {
+        if (!miniWindow || miniWindow.isDestroyed()) return;
+        miniWindow.setIgnoreMouseEvents(!!ignore, { forward: true });
+    });
+
+    // Activar/desactivar el widget flotante desde el header.
+    ipcMain.on('mini:setEnabled', (_e, enabled) => {
+        miniEnabled = !!enabled;
+        if (!miniEnabled) hideMini();
+        else if (mainWindow && mainWindow.isMinimized()) showMini();
     });
 
     // Controles de ventana propios (min / max-restore / cerrar).
