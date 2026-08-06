@@ -1,0 +1,57 @@
+name: Desktop builds
+
+# Genera los instaladores de escritorio para Windows, Linux y macOS.
+# Se dispara manualmente (workflow_dispatch) o al pushear un tag v* (ej: v0.1.0).
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win nsis portable
+          - os: ubuntu-latest
+            target: --linux AppImage deb
+          - os: macos-latest
+            target: --mac dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build React app
+        # El thin client apunta al backend hosteado + assets en R2.
+        # Definí estos valores en Settings → Secrets and variables → Actions → Variables.
+        env:
+          REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
+          REACT_APP_ASSETS_URL: ${{ vars.REACT_APP_ASSETS_URL }}
+        run: npm run build
+
+      - name: Package with electron-builder
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder ${{ matrix.target }} --publish never
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: lofito-${{ matrix.os }}
+          path: |
+            dist-desktop/*.exe
+            dist-desktop/*.AppImage
+            dist-desktop/*.deb
+            dist-desktop/*.dmg
+          if-no-files-found: ignore

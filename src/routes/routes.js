@@ -1,6 +1,7 @@
 import Main from '~/pages/Main/Main';
 import NotFound from '~/pages/NotFound';
 import Admin from '~/pages/Admin';
+import Playlists from '~/pages/Playlists';
 import { PlayerLayout } from '~/layouts/';
 
 export const publicRoutes = [
@@ -13,6 +14,12 @@ export const publicRoutes = [
     {
         path: '/admin',
         component: Admin,
+        layout: null,
+    },
+
+    {
+        path: '/playlists',
+        component: Playlists,
         layout: null,
     },
 

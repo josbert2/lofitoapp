@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lofito mini</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-app-region: drag;
+    }
+    .card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 100%;
+        padding: 8px 10px;
+        background: #171a21;
+        color: #fff;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .art {
+        width: 42px; height: 42px; flex: 0 0 42px;
+        border-radius: 9px;
+        background: linear-gradient(135deg,#5b6cff,#a24bff);
+        background-size: cover; background-position: center;
+        display: grid; place-items: center; font-size: 19px;
+        overflow: hidden;
+    }
+    .mid { flex: 1 1 auto; min-width: 0; }
+    .title { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .artist { font-size: 10px; opacity: .55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vol { display: flex; align-items: center; gap: 4px; margin-top: 4px; -webkit-app-region: no-drag; }
+    .vol span { font-size: 10px; opacity: .5; }
+    .vol input { width: 100%; height: 3px; accent-color: #fff; cursor: pointer; }
+    .controls { display: flex; align-items: center; gap: 4px; -webkit-app-region: no-drag; }
+    .btn {
+        -webkit-app-region: no-drag; cursor: pointer; border: none; background: transparent; color: #fff;
+        width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+        transition: background .15s;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); }
+    .btn.play { background: #fff; color: #171a21; width: 32px; height: 32px; font-size: 14px; }
+    .btn.play:hover { background: #e6e6e6; }
+    .expand { -webkit-app-region: no-drag; position: absolute; top: 6px; right: 8px; cursor: pointer; font-size: 11px; opacity: .4; z-index: 2; }
+    .expand:hover { opacity: .9; }
+    .wrap { position: relative; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="expand" id="expand" title="Abrir Lofito">⤢</div>
+    <div class="card">
+        <div class="art" id="art">🎵</div>
+        <div class="mid">
+            <div class="title" id="title">—</div>
+            <div class="artist" id="artist"></div>
+            <div class="vol">
+                <span>🔊</span>
+                <input type="range" id="vol" min="0" max="100" value="50" />
+            </div>
+        </div>
+        <div class="controls">
+            <button class="btn" id="prev" title="Anterior">⏮</button>
+            <button class="btn play" id="toggle" title="Play/Pausa">▶</button>
+            <button class="btn" id="next" title="Siguiente">⏭</button>
+        </div>
+    </div>
+</div>
+<script>
+    const D = window.lofitoDesktop;
+    const $ = (id) => document.getElementById(id);
+    let dragVol = false;
+
+    function render(s) {
+        if (!s) return;
+        $('title').textContent = s.title || 'Sin título';
+        $('artist').textContent = s.artist || '';
+        $('toggle').textContent = s.playing ? '⏸' : '▶';
+        if (!dragVol && typeof s.volume === 'number') $('vol').value = Math.round(s.volume * 100);
+        const art = $('art');
+        if (s.art) {
+            art.style.backgroundImage = `url("${s.art}")`;
+            art.textContent = '';
+        } else {
+            art.style.backgroundImage = '';
+            art.textContent = '🎵';
+        }
+    }
+
+    if (D) {
+        D.onNowPlaying(render);
+        D.requestNowPlaying();
+        $('prev').onclick = () => D.sendCommand('prev');
+        $('next').onclick = () => D.sendCommand('next');
+        $('toggle').onclick = () => D.sendCommand('toggle');
+        $('expand').onclick = () => D.restoreMain();
+        const vol = $('vol');
+        vol.oninput = () => { dragVol = true; D.sendCommand({ type: 'volume', value: Number(vol.value) / 100 }); };
+        vol.onchange = () => { dragVol = false; };
+    }
+</script>
+</body>
+</html>

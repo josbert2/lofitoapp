@@ -72,3 +72,15 @@ CREATE TABLE IF NOT EXISTS notes (
     INDEX idx_user_modified (userId, modifiedAt),
     CONSTRAINT notes_user_fk FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Playlists de YouTube por usuario. items = JSON [{ videoId, url, title, addedAt }]
+CREATE TABLE IF NOT EXISTS playlists (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL DEFAULT 'Mi playlist',
+    items JSON,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modifiedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_playlists (userId, modifiedAt),
+    CONSTRAINT playlists_user_fk FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

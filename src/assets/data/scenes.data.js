@@ -32,12 +32,14 @@ import {
     trainCountry,
 } from '~/assets/thumbnails';
 
+// Host de assets (mirror vivo del autor original). Override con REACT_APP_ASSETS_URL (ej: tu R2).
+const ASSET_HOST = process.env.REACT_APP_ASSETS_URL || 'https://lofi.vexcited.com/large';
 // Video Api
-const URL = 'https://lofi-co-assets.vexcited.com/scenes/';
+const URL = ASSET_HOST + '/scenes/';
 // Wallpaper Api
-const URLW = 'https://lofi-co-assets.vexcited.com/wallpapers/';
+const URLW = ASSET_HOST + '/wallpapers/';
 
-const URL_NEW = 'https://lofi-co-assets.vexcited.com/scenes/';
+const URL_NEW = ASSET_HOST + '/scenes/';
 
 export const scenes = {
     forestInside: {

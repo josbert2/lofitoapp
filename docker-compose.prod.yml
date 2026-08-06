@@ -11,6 +11,10 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+      # Inicializa el schema en el primer arranque (volumen vacío). Orden por prefijo:
+      # 01 crea tablas (users, templates, notes, playlists), 02 agrega is_admin + catálogo.
+      - ./server/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./server/schema-catalog.sql:/docker-entrypoint-initdb.d/02-catalog.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
@@ -39,6 +43,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 7d
       CORS_ORIGIN: ${CORS_ORIGIN}
+      # Cloudflare R2 (para que el admin suba assets nuevos)
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
     depends_on:
       mysql:
         condition: service_healthy

@@ -16,12 +16,64 @@
     padding: 0 48px;
     z-index: 1;
     transition: all 0.3s ease-in-out;
+    // permite arrastrar la ventana desde el header (solo en Electron; el browser lo ignora)
+    -webkit-app-region: drag;
+}
+
+.header-logo {
+    -webkit-app-region: no-drag;
+}
+
+// Control de volumen del header (botón mute + slider compacto)
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.volume-slider {
+    -webkit-app-region: no-drag;
+    width: 72px;
+    height: 4px;
+    cursor: pointer;
+    accent-color: #ffffff;
+    background: transparent;
+}
+
+// Controles de ventana propios (solo desktop): min / max / cerrar
+.winControls {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    z-index: 1000002;
+    -webkit-app-region: no-drag;
+}
+.winBtn {
+    width: 46px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    color: #e6e6e6;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    &:hover {
+        background: rgba(255, 255, 255, 0.14);
+    }
+}
+.winClose:hover {
+    background: #e81123;
+    color: #fff;
 }
 
 .actions {
     display: flex;
     align-items: center;
     margin-top: 10px;
+    // los controles deben ser clickeables, no zona de arrastre
+    -webkit-app-region: no-drag;
 
     .signUp-btn {
         border-radius: 8px;

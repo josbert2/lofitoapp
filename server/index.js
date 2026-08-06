@@ -478,6 +478,99 @@ app.delete('/api/notes/:id', requireAuth, async (req, res, next) => {
     }
 });
 
+// --- playlists (YouTube) ----------------------------------------------------
+
+const rowToPlaylist = (r) => ({
+    id: r.id,
+    name: r.name || 'Mi playlist',
+    items: jsonCol(r.items, []),
+    createdAt: r.createdAt,
+    modifiedAt: r.modifiedAt,
+});
+
+// Normaliza los items para no confiar en el cliente.
+const sanitizeItems = (items) =>
+    (Array.isArray(items) ? items : [])
+        .map((it) => ({
+            videoId: String(it?.videoId || '').slice(0, 20),
+            url: String(it?.url || '').slice(0, 500),
+            title: String(it?.title || '').slice(0, 300),
+            addedAt: Number(it?.addedAt) || Date.now(),
+        }))
+        .filter((it) => it.videoId)
+        .slice(0, 500);
+
+app.get('/api/playlists', requireAuth, async (req, res, next) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT * FROM playlists WHERE userId = :id ORDER BY modifiedAt DESC',
+            { id: req.userId }
+        );
+        res.json({ playlists: rows.map(rowToPlaylist) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.post('/api/playlists', requireAuth, async (req, res, next) => {
+    try {
+        const name = String(req.body?.name || 'Mi playlist').slice(0, 255);
+        const items = sanitizeItems(req.body?.items);
+        const [result] = await pool.query(
+            `INSERT INTO playlists (userId, name, items) VALUES (:userId, :name, :items)`,
+            { userId: req.userId, name, items: JSON.stringify(items) }
+        );
+        const [rows] = await pool.query('SELECT * FROM playlists WHERE id = :id', { id: result.insertId });
+        res.status(201).json({ playlist: rowToPlaylist(rows[0]) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.patch('/api/playlists/:id', requireAuth, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'playlists/invalid-id');
+
+        const sets = [];
+        const params = { id, userId: req.userId };
+        if (Object.prototype.hasOwnProperty.call(req.body || {}, 'name')) {
+            sets.push('name = :name');
+            params.name = String(req.body.name || 'Mi playlist').slice(0, 255);
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body || {}, 'items')) {
+            sets.push('items = :items');
+            params.items = JSON.stringify(sanitizeItems(req.body.items));
+        }
+        if (!sets.length) throw httpError(400, 'playlists/no-fields');
+
+        const [result] = await pool.query(
+            `UPDATE playlists SET ${sets.join(', ')} WHERE id = :id AND userId = :userId`,
+            params
+        );
+        if (!result.affectedRows) throw httpError(404, 'playlists/not-found');
+        const [rows] = await pool.query('SELECT * FROM playlists WHERE id = :id', { id });
+        res.json({ playlist: rowToPlaylist(rows[0]) });
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.delete('/api/playlists/:id', requireAuth, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) throw httpError(400, 'playlists/invalid-id');
+        const [result] = await pool.query('DELETE FROM playlists WHERE id = :id AND userId = :userId', {
+            id,
+            userId: req.userId,
+        });
+        if (!result.affectedRows) throw httpError(404, 'playlists/not-found');
+        res.json({ ok: true });
+    } catch (e) {
+        next(e);
+    }
+});
+
 // --- catálogo (público) -----------------------------------------------------
 
 // Catálogo publicado, en la misma forma que consumen los archivos estáticos del
