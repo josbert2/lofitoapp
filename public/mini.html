@@ -126,7 +126,10 @@
             <div class="title" id="title">—</div>
             <div class="artist" id="artist"></div>
         </div>
-        <div class="eq" id="eq"><span></span><span></span><span></span><span></span></div>
+        <div id="volwrap" style="display:flex;align-items:center;gap:5px;width:82px;flex:0 0 auto;color:var(--accent)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex:0 0 auto"><path d="M4 9v6h4l5 5V4L8 9H4z"/></svg>
+            <input id="vol" type="range" min="0" max="100" value="50" style="width:100%;height:3px;accent-color:var(--accent);cursor:pointer">
+        </div>
     </div>
 
     <div class="progress">
@@ -221,8 +224,10 @@
         $('fill').style.width = (dur > 0 ? Math.min(100, (el / dur) * 100) : 0) + '%';
         $('elapsed').textContent = fmt(el);
         $('remain').textContent = dur > 0 ? '-' + fmt(dur - el) : '--:--';
+        if (!dragVol && typeof s.volume === 'number') $('vol').value = Math.round(s.volume * 100);
     }
 
+    let dragVol = false;
     if (D) {
         $('toggle').innerHTML = PLAY;
         D.onNowPlaying(render);
@@ -232,6 +237,9 @@
         $('toggle').onclick = () => D.sendCommand('toggle');
         $('scenePrev').onclick = () => D.sendCommand('scene:prev');
         $('sceneNext').onclick = () => D.sendCommand('scene:next');
+        const vol = $('vol');
+        vol.oninput = () => { dragVol = true; D.sendCommand({ type: 'volume', value: Number(vol.value) / 100 }); };
+        vol.onchange = () => { dragVol = false; };
         $('open').onclick = () => D.restoreMain();
     }
 </script>
