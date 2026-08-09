@@ -206,7 +206,7 @@ function reparentToDesktop(hwnd) {
         execFile(
             'powershell.exe',
             ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', tmp, '-Hwnd', String(hwnd)],
-            (err) => err && console.error('wallpaper reparent:', err.message)
+            (err) => err && console.error('wallpaper reparent:', err.message),
         );
     } catch (e) {
         console.error('wallpaper:', e.message);

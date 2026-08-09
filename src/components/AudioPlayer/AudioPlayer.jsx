@@ -2,11 +2,20 @@ import { useCallback, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 import { useStore } from '~/hooks';
 import { useSelector } from '~/hooks/useSelector';
-import { nextTrack, previousTrack, playAndPauseAudio, setAudioVolume, SessionSelect } from '~/store/session';
+import {
+    nextTrack,
+    previousTrack,
+    playAndPauseAudio,
+    setAudioVolume,
+    setSceneAndSet,
+    SessionSelect,
+} from '~/store/session';
 
 function AudioPlayer() {
     const { session } = useStore();
-    const [, sessionDispatch] = session;
+    const [sessionState, sessionDispatch] = session;
+    const sessRef = useRef(sessionState);
+    sessRef.current = sessionState;
     const playerRef = useRef();
     const currentTrack = useSelector(SessionSelect.getCurrentTrack);
     const playing = useSelector(SessionSelect.getPlayingStatus);
@@ -79,6 +88,14 @@ function AudioPlayer() {
             else if (cmd === 'next') sessionDispatch(nextTrack());
             else if (cmd === 'prev') sessionDispatch(previousTrack());
             else if (cmd && cmd.type === 'volume') sessionDispatch(setAudioVolume({ level: cmd.value }));
+            else if (cmd === 'scene:next' || cmd === 'scene:prev') {
+                const s = sessRef.current;
+                const scenes = s?.set?.scenes || [];
+                if (!scenes.length) return;
+                const i = s.sceneIndex ?? 0;
+                const idx = cmd === 'scene:next' ? (i + 1) % scenes.length : (i - 1 + scenes.length) % scenes.length;
+                sessionDispatch(setSceneAndSet({ set: s.set, sceneIndex: idx }));
+            }
         });
     }, [sessionDispatch]);
 
