@@ -99,6 +99,31 @@ function Header() {
         });
     };
 
+    // Modo Wallpaper (escena como fondo de escritorio vivo): opt-in, persistido.
+    const [wallpaperEnabled, setWallpaperEnabled] = useState(() => {
+        try {
+            return localStorage.getItem('lofito_wallpaper') === 'on';
+        } catch {
+            return false;
+        }
+    });
+    useEffect(() => {
+        if (isDesktop && window.lofitoDesktop.setWallpaperEnabled) {
+            window.lofitoDesktop.setWallpaperEnabled(wallpaperEnabled);
+        }
+    }, [isDesktop, wallpaperEnabled]);
+    const toggleWallpaper = () => {
+        setWallpaperEnabled((v) => {
+            const next = !v;
+            try {
+                localStorage.setItem('lofito_wallpaper', next ? 'on' : 'off');
+            } catch {
+                /* ignore */
+            }
+            return next;
+        });
+    };
+
     return (
         <header className={cx('wrapper')}>
             <div className={cx('inner')}>
@@ -220,6 +245,17 @@ function Header() {
 
             {isDesktop && (
                 <div className={cx('winControls')}>
+                    <button
+                        className={cx('winBtn')}
+                        title={wallpaperEnabled ? 'Modo wallpaper: activado' : 'Modo wallpaper (fondo de escritorio)'}
+                        onClick={toggleWallpaper}
+                        style={{ color: wallpaperEnabled ? '#a99bff' : 'rgba(255,255,255,0.35)' }}
+                    >
+                        <svg width="15" height="13" viewBox="0 0 15 13" fill="none">
+                            <rect x="0.5" y="0.5" width="14" height="9.5" rx="1.5" stroke="currentColor" />
+                            <path d="M5 12.5h5M7.5 10.2v2.3" stroke="currentColor" strokeLinecap="round" />
+                        </svg>
+                    </button>
                     <button
                         className={cx('winBtn')}
                         title={widgetEnabled ? 'Widget flotante: activado' : 'Widget flotante: desactivado'}

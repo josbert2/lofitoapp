@@ -16,6 +16,14 @@ function AudioPlayer() {
     const elapsedRef = useRef(0);
     const durationRef = useRef(0);
 
+    // Publica la URL del video de la escena actual al fondo de escritorio (modo wallpaper).
+    const sceneSource = useSelector(SessionSelect.getSceneSource);
+    useEffect(() => {
+        const D = window.lofitoDesktop;
+        if (!D || D.isMini || D.isWallpaper || !D.publishScene) return;
+        if (sceneSource) D.publishScene(sceneSource);
+    }, [sceneSource]);
+
     // --- Puente con el mini-player de escritorio (solo en Electron) ---
     // Arma el estado "qué suena" y lo publica para que el widget lo muestre.
     const publishNowPlaying = useCallback(() => {

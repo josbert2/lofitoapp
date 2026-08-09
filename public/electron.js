@@ -6,6 +6,8 @@ const { autoUpdater } = require('electron-updater');
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
+const { execFile } = require('node:child_process');
 
 const isDev = !app.isPackaged;
 const DEV_URL = process.env.ELECTRON_START_URL || 'http://localhost:3000';
@@ -163,6 +165,106 @@ function hideMini() {
     if (miniWindow && miniWindow.isVisible()) miniWindow.hide();
 }
 
+// --- Modo Wallpaper (fondo de escritorio vivo, estilo Wallpaper Engine) -----
+let wallpaperWindow = null;
+let lastScene = null;
+
+// Reparenta la ventana al WorkerW del escritorio (detrás de los íconos) vía
+// PowerShell — mismo truco que Lively Wallpaper. Solo Windows.
+function reparentToDesktop(hwnd) {
+    if (process.platform !== 'win32') return;
+    const ps = [
+        'param([long]$Hwnd)',
+        '$sig = @"',
+        'using System;',
+        'using System.Runtime.InteropServices;',
+        'public class WP {',
+        '  [DllImport("user32.dll")] public static extern IntPtr FindWindow(string c, string w);',
+        '  [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeout(IntPtr h,uint m,IntPtr wp,IntPtr lp,uint f,uint t,out IntPtr r);',
+        '  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc cb,IntPtr p);',
+        '  [DllImport("user32.dll")] public static extern IntPtr FindWindowEx(IntPtr par,IntPtr ca,string c,string w);',
+        '  [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr c,IntPtr p);',
+        '  public delegate bool EnumProc(IntPtr h,IntPtr p);',
+        '  public static IntPtr worker = IntPtr.Zero;',
+        '  static bool Cb(IntPtr top,IntPtr p){',
+        '    if (FindWindowEx(top,IntPtr.Zero,"SHELLDLL_DefView",null) != IntPtr.Zero)',
+        '      worker = FindWindowEx(IntPtr.Zero,top,"WorkerW",null);',
+        '    return true; }',
+        '  public static IntPtr Get(){',
+        '    IntPtr pm = FindWindow("Progman",null); IntPtr r;',
+        '    SendMessageTimeout(pm,0x052C,IntPtr.Zero,IntPtr.Zero,0,1000,out r);',
+        '    worker = IntPtr.Zero; EnumWindows(new EnumProc(Cb),IntPtr.Zero); return worker; }',
+        '}',
+        '"@',
+        'Add-Type -TypeDefinition $sig',
+        '$w = [WP]::Get()',
+        'if ($w -ne [IntPtr]::Zero) { [WP]::SetParent([IntPtr]$Hwnd,$w) }',
+    ].join('\n');
+    try {
+        const tmp = path.join(os.tmpdir(), 'lofito-wallpaper.ps1');
+        fs.writeFileSync(tmp, ps, 'utf8');
+        execFile(
+            'powershell.exe',
+            ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', tmp, '-Hwnd', String(hwnd)],
+            (err) => err && console.error('wallpaper reparent:', err.message)
+        );
+    } catch (e) {
+        console.error('wallpaper:', e.message);
+    }
+}
+
+function createWallpaperWindow() {
+    if (wallpaperWindow) return wallpaperWindow;
+    const { x, y, width, height } = screen.getPrimaryDisplay().bounds;
+    wallpaperWindow = new BrowserWindow({
+        x,
+        y,
+        width,
+        height,
+        frame: false,
+        skipTaskbar: true,
+        focusable: false,
+        resizable: false,
+        movable: false,
+        hasShadow: false,
+        fullscreenable: false,
+        webPreferences: {
+            preload: PRELOAD,
+            contextIsolation: true,
+            nodeIntegration: false,
+            backgroundThrottling: false,
+            additionalArguments: ['--lofito-wallpaper'],
+        },
+    });
+    wallpaperWindow.setMenuBarVisibility(false);
+    wallpaperWindow.loadURL(`${baseUrl}/wallpaper.html`);
+    wallpaperWindow.on('closed', () => {
+        wallpaperWindow = null;
+    });
+    // Al terminar de cargar: mandamos la escena actual y reparentamos al escritorio.
+    wallpaperWindow.webContents.on('did-finish-load', () => {
+        if (lastScene) wallpaperWindow.webContents.send('wallpaper:scene', lastScene);
+        const buf = wallpaperWindow.getNativeWindowHandle();
+        let hwnd;
+        try {
+            hwnd = buf.readBigUInt64LE(0).toString();
+        } catch {
+            hwnd = String(buf.readUInt32LE(0));
+        }
+        reparentToDesktop(hwnd);
+    });
+    return wallpaperWindow;
+}
+
+function setWallpaper(enabled) {
+    if (enabled) {
+        createWallpaperWindow();
+    } else if (wallpaperWindow) {
+        wallpaperWindow.close();
+        wallpaperWindow = null;
+    }
+}
+
 async function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1280,
@@ -249,6 +351,20 @@ function setupIpc() {
 
     // Instalar la actualización descargada (desde el toast propio).
     ipcMain.on('update:install', () => autoUpdater.quitAndInstall());
+
+    // --- Modo Wallpaper ---
+    ipcMain.on('wallpaper:setEnabled', (_e, enabled) => setWallpaper(enabled));
+    // La app principal publica la escena actual → la reenviamos al wallpaper.
+    ipcMain.on('wallpaper:scene', (_e, url) => {
+        lastScene = url;
+        if (wallpaperWindow && !wallpaperWindow.isDestroyed()) {
+            wallpaperWindow.webContents.send('wallpaper:scene', url);
+        }
+    });
+    // El wallpaper pide la escena actual al cargar.
+    ipcMain.on('wallpaper:requestScene', (e) => {
+        if (lastScene) e.sender.send('wallpaper:scene', lastScene);
+    });
 }
 
 // --- Auto-update (solo en la app empaquetada) ------------------------------

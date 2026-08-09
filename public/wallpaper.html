@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Lofito wallpaper</title>
+<style>
+    * { margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+</style>
+</head>
+<body>
+<video id="v" autoplay muted loop playsinline></video>
+<script>
+    const D = window.lofitoDesktop;
+    const v = document.getElementById('v');
+    function setSrc(url) {
+        if (!url || v.src === url) return;
+        v.src = url;
+        v.play().catch(() => {});
+    }
+    if (D && D.onScene) {
+        D.onScene(setSrc);
+        D.requestScene();
+    }
+</script>
+</body>
+</html>

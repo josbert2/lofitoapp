@@ -1,11 +1,13 @@
 // Puente seguro entre el renderer y el proceso principal (contextIsolation).
-// Se usa tanto en la ventana principal como en el mini-player.
+// Se usa en la ventana principal, el mini-player y el wallpaper.
 const { contextBridge, ipcRenderer } = require('electron');
 
 const isMini = process.argv.includes('--lofito-mini');
+const isWallpaper = process.argv.includes('--lofito-wallpaper');
 
 contextBridge.exposeInMainWorld('lofitoDesktop', {
     isMini,
+    isWallpaper,
 
     // Controles: el mini-player los manda, la ventana principal los ejecuta.
     sendCommand: (cmd) => ipcRenderer.send('lofito:command', cmd),
@@ -46,4 +48,17 @@ contextBridge.exposeInMainWorld('lofitoDesktop', {
         return () => ipcRenderer.removeListener('update:ready', h);
     },
     installUpdate: () => ipcRenderer.send('update:install'),
+
+    // --- Modo Wallpaper ---
+    // Activar/desactivar el fondo de escritorio vivo (toggle desde el header).
+    setWallpaperEnabled: (enabled) => ipcRenderer.send('wallpaper:setEnabled', enabled),
+    // La app principal publica la URL de la escena que se ve de fondo.
+    publishScene: (url) => ipcRenderer.send('wallpaper:scene', url),
+    // La ventana del wallpaper escucha la escena y la pide al cargar.
+    onScene: (cb) => {
+        const h = (_e, url) => cb(url);
+        ipcRenderer.on('wallpaper:scene', h);
+        return () => ipcRenderer.removeListener('wallpaper:scene', h);
+    },
+    requestScene: () => ipcRenderer.send('wallpaper:requestScene'),
 });
