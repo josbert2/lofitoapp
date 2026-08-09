@@ -64,9 +64,19 @@ function startStaticServer() {
                 res.end('error');
             }
         });
-        server.listen(LOCAL_PORT, '127.0.0.1', () => {
-            resolve(`http://127.0.0.1:${LOCAL_PORT}`);
-        });
+        // Si el puerto fijo está ocupado (p.ej. un proceso viejo colgado), caemos
+        // a un puerto efímero para que la app SIEMPRE abra.
+        const listen = (port) => {
+            server.once('error', () => {
+                if (port !== 0) listen(0);
+                else resolve(`http://127.0.0.1:${LOCAL_PORT}`);
+            });
+            server.listen(port, '127.0.0.1', () => {
+                server.removeAllListeners('error');
+                resolve(`http://127.0.0.1:${server.address().port}`);
+            });
+        };
+        listen(LOCAL_PORT);
     });
 }
 
@@ -293,12 +303,23 @@ function setupMenu() {
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-app.whenReady().then(() => {
-    setupMenu();
-    setupIpc();
-    createWindow();
-    setupAutoUpdate();
-});
+// Una sola instancia: si ya hay una corriendo, enfocamos esa y salimos.
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+} else {
+    app.on('second-instance', () => {
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+        }
+    });
+    app.whenReady().then(() => {
+        setupMenu();
+        setupIpc();
+        createWindow();
+        setupAutoUpdate();
+    });
+}
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

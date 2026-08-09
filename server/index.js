@@ -37,7 +37,26 @@ const pool = mysql.createPool({
 });
 
 const app = express();
-app.use(cors({ origin: CORS_ORIGIN.split(','), credentials: true }));
+// Permitimos la whitelist + cualquier origin local (Electron usa un puerto que
+// puede variar). Es seguro porque la auth es por Bearer token, no cookies.
+const corsAllow = CORS_ORIGIN.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+app.use(
+    cors({
+        origin(origin, cb) {
+            if (
+                !origin ||
+                /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin) ||
+                corsAllow.includes(origin)
+            ) {
+                return cb(null, true);
+            }
+            cb(null, false);
+        },
+        credentials: true,
+    })
+);
 app.use(express.json());
 
 // --- helpers ----------------------------------------------------------------
